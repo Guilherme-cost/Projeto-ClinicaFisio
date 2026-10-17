@@ -1,0 +1,221 @@
+/* ---------- Topo de cada aba ---------- */
+.secao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.secao-topo h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #12263a;
+}
+
+.secao-topo p {
+  margin: 2px 0 0;
+  color: #5b6b7b;
+}
+
+.btn-novo:disabled,
+.acao:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------- Textos da tabela ---------- */
+.nome-normal {
+  display: block;
+  color: #12263a;
+}
+
+.sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #5b6b7b;
+}
+
+.sub-erro { color: #991b1b; }
+
+.grupo-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d5a9a;
+  background: #e3effa;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ---------- Avisos ---------- */
+.aviso {
+  margin: 10px 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 4px;
+}
+
+.aviso.alerta { color: #7a4a05; background: #fff8ea; border-color: #d97706; }
+.aviso.info   { color: #1d5a9a; background: #eef5fc; border-color: #2f80c4; }
+.aviso.ok     { color: #166534; background: #e6f7ec; border-color: #16a34a; }
+.aviso.erro   { color: #991b1b; background: #fdecec; border-color: #dc2626; }
+
+.dica {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #5b6b7b;
+}
+
+/* ---------- Grupos ---------- */
+.grupos-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.lista-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grupo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  font-family: inherit;
+  text-align: left;
+  background: #fff;
+  border: 2px solid #e1e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.grupo-item:hover { border-color: #c5d3e2; }
+
+.grupo-item.selecionado {
+  background: #eef5fc;
+  border-color: #2f80c4;
+}
+
+.grupo-item strong { display: block; color: #12263a; }
+.grupo-item small { font-size: 12px; color: #5b6b7b; }
+
+.painel {
+  padding: 16px 20px;
+  border: 1px solid #e1e8f0;
+  border-radius: 8px;
+}
+
+.painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.painel-topo h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #12263a;
+}
+
+.painel-topo small { font-size: 13px; color: #5b6b7b; }
+
+.btn-perigo {
+  height: 34px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fff;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-perigo.reativar { color: #166534; border-color: #16a34a; }
+
+/* Permissões com caixa quadrada */
+.perm-linha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #edf1f5;
+  cursor: pointer;
+}
+
+.perm-linha input {
+  position: absolute;
+  opacity: 0;
+}
+
+.perm-caixa {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #fff;
+  background: #fff;
+  border: 1px solid #9aa8b6;
+  border-radius: 4px;
+}
+
+.perm-linha input:checked + .perm-caixa {
+  background: #2f80c4;
+  border-color: #2f80c4;
+}
+
+.perm-linha input:focus-visible + .perm-caixa {
+  box-shadow: 0 0 0 3px rgba(28, 111, 184, 0.3);
+}
+
+.perm-linha input:disabled ~ * { opacity: 0.7; }
+.perm-linha:has(input:disabled) { cursor: default; }
+
+.perm-nome {
+  flex: 1;
+  font-weight: 600;
+  color: #12263a;
+}
+
+.perm-estado { font-size: 12px; font-weight: 700; }
+.perm-estado.sim { color: #166534; }
+.perm-estado.nao { color: #991b1b; }
+
+.rodape-painel {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-salvar {
+  height: 40px;
+  padding: 0 22px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-salvar:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 900px) {
+  .grupos-layout { grid-template-columns: 1fr; }
+}

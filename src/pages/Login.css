@@ -1,0 +1,141 @@
+.login-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------- Painel esquerdo ---------- */
+.login-hero {
+  flex: 1;
+  padding: 56px 56px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(96, 165, 250, 0.45), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(14, 116, 144, 0.5), transparent 50%),
+    linear-gradient(160deg, #2f80c4 0%, #1d5a9a 45%, #0f3460 100%);
+}
+
+.logo-nome {
+  display: block;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-sub {
+  display: block;
+  font-size: 18px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.hero-texto h2 {
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0 0 16px;
+  max-width: 520px;
+}
+
+.hero-texto p {
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 480px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.login-hero footer {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ---------- Painel direito ---------- */
+.login-form-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-form h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  color: #12263a;
+}
+
+.subtitulo {
+  margin: 0 0 24px;
+  font-size: 15px;
+  color: #3f4f5f;
+}
+
+.linha-dupla {
+  height: 3px;
+  margin-bottom: 24px;
+  background: linear-gradient(90deg, #a9c4dd 0 60%, #1c6fb8 60% 100%);
+}
+
+.login-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f4f5f;
+  margin-bottom: 6px;
+}
+
+.login-form input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 15px;
+  font-family: inherit;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #1c6fb8;
+  box-shadow: 0 0 0 3px rgba(28, 111, 184, 0.15);
+}
+
+.btn-entrar {
+  height: 46px;
+  margin-top: 4px;
+  background: linear-gradient(135deg, #2f80c4, #1c5a9a);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(28, 111, 184, 0.3);
+}
+
+.btn-entrar:hover {
+  background: linear-gradient(135deg, #2573b3, #154a80);
+}
+
+.erro {
+  color: #dc2626;
+  font-size: 14px;
+  margin: -6px 0 12px;
+}
+
+/* ---------- Celular / tela pequena ---------- */
+@media (max-width: 900px) {
+  .login-hero {
+    display: none;
+  }
+}

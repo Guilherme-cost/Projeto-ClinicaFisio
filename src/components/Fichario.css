@@ -1,0 +1,46 @@
+.fichario-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 18px;
+}
+
+.fichario-aba {
+  position: relative;
+  padding: 8px 22px;
+  margin-top: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5b6b7b;
+  background: #dfe8f2;
+  border: 1px solid #cdd9e6;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+
+.fichario-aba:hover { background: #d3e0ee; }
+
+/* Aba ativa: mais alta, emendada com a folha */
+.fichario-aba.ativa {
+  z-index: 1;
+  margin-top: 0;
+  margin-bottom: -1px;
+  padding: 11px 26px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f3460;
+  background: #fff;
+  border-top: 4px solid #2f80c4;
+  border-bottom: 1px solid #fff;
+  border-radius: 10px 10px 0 0;
+  cursor: default;
+}
+
+.fichario-corpo {
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid #cdd9e6;
+  border-radius: 10px;
+}

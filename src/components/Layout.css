@@ -1,0 +1,253 @@
+.layout {
+  min-height: 100vh;
+  background: #f1f5fa;
+}
+
+/* ---------- Topo ---------- */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: #fff;
+  border-top: 3px solid #2f80c4;
+  box-shadow: 0 2px 8px rgba(18, 38, 58, 0.12);
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.topbar-logo .logo-nome {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #2f80c4, #0f3460);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.topbar-logo .logo-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #2f80c4;
+}
+
+.topbar-usuario {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 14px;
+  color: #3f4f5f;
+}
+
+.topbar-usuario strong {
+  color: #12263a;
+}
+
+.separador {
+  width: 2px;
+  height: 18px;
+  background: #12263a;
+}
+
+.btn-sair {
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #12263a;
+  cursor: pointer;
+}
+
+.btn-sair:hover {
+  color: #1c6fb8;
+  text-decoration: underline;
+}
+
+/* ---------- Menu lateral ---------- */
+.sidebar {
+  position: fixed;
+  top: 64px;
+  bottom: 0;
+  left: 0;
+  width: 56px;
+  z-index: 50;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(96, 165, 250, 0.35), transparent 45%),
+    linear-gradient(170deg, #1f5f9f 0%, #123e6e 55%, #0a2447 100%);
+  transition: width 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Abre quando o mouse chega perto (na faixa) e fecha ao sair */
+.sidebar:hover {
+  width: 260px;
+  box-shadow: 6px 0 24px rgba(10, 36, 71, 0.35);
+}
+
+.sidebar-nav {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ---------- Títulos das seções ---------- */
+.menu-titulo {
+  position: relative;
+  height: 20px;
+  margin: 12px 0 4px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: transparent; /* texto escondido quando fechado */
+  transition: color 0.2s;
+}
+
+/* Linha fininha: aparece só quando o menu está fechado */
+.menu-titulo::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: opacity 0.2s;
+}
+
+/* O primeiro título não precisa de linha nem de espaço quando fechado */
+.menu-titulo:first-child {
+  margin: 0;
+  height: 0;
+  padding: 0;
+}
+
+.menu-titulo:first-child::before {
+  display: none;
+}
+
+/* Menu aberto: título aparece e a linha some */
+.sidebar:hover .menu-titulo {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sidebar:hover .menu-titulo::before {
+  opacity: 0;
+}
+
+.sidebar:hover .menu-titulo:first-child {
+  height: 20px;
+  padding: 0 12px;
+  margin-bottom: 4px;
+}
+
+/* ---------- Itens do menu ---------- */
+.menu-item {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.menu-item .icone {
+  flex-shrink: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.menu-item .texto {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar:hover .menu-item .texto {
+  opacity: 1;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.menu-item.ativo {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
+  color: #fff;
+  box-shadow: inset 3px 0 0 #7cc0f5;
+}
+
+/* ---------- Conteúdo ---------- */
+.conteudo {
+  margin-left: 56px;
+  padding-top: 64px;
+  min-height: 100vh;
+}
+
+.pagina-cabecalho {
+  padding: 24px 32px 0;
+}
+
+.pagina-cabecalho h1 {
+  margin: 0;
+  font-size: 26px;
+  color: #12263a;
+}
+
+.data-hoje {
+  font-size: 14px;
+  color: #5b6b7b;
+  text-transform: capitalize;
+}
+
+.area-pagina {
+   padding: 24px 32px 32px;
+}
+
+.pagina-card {
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #e1e8f0;
+  border-radius: 10px;
+}
+
+.pagina-card h2 {
+  margin: 0 0 8px;
+  color: #12263a;
+}
+
+.pagina-card p {
+  margin: 0;
+  color: #5b6b7b;
+}
