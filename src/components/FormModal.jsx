@@ -3,8 +3,9 @@ import { LuX } from "react-icons/lu";
 import { useToast } from "./toastContext";
 
 function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
+  const toast = useToast();
+
   const [form, setForm] = useState(() => {
-    const toast = useToast();
     const valores = {};
     campos.forEach((c) => {
       valores[c.chave] = inicial?.[c.chave] ?? "";
@@ -38,28 +39,28 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
   }
 
   async function enviar(evento) {
-  evento.preventDefault();
-  const e = validar();
-  if (Object.keys(e).length > 0) {
-    setErros(e);
-    toast.erro("Corrija os campos destacados.");
-    return;
-  }
+    evento.preventDefault();
+    const e = validar();
+    if (Object.keys(e).length > 0) {
+      setErros(e);
+      toast.erro("Corrija os campos destacados.");
+      return;
+    }
 
-  const dados = inicial?.id ? { id: inicial.id } : {};
-  campos.forEach((c) => {
-    const v = form[c.chave];
-    dados[c.chave] = c.tipo === "number" ? Number(v) : typeof v === "string" ? v.trim() : v;
-  });
+    const dados = inicial?.id ? { id: inicial.id } : {};
+    campos.forEach((c) => {
+      const v = form[c.chave];
+      dados[c.chave] = c.tipo === "number" ? Number(v) : typeof v === "string" ? v.trim() : v;
+    });
 
-  setSalvando(true);
-  try {
-    await onSalvar(dados);
-  } catch (erro) {
-    toast.erro(erro.message);
-    setSalvando(false);
+    setSalvando(true);
+    try {
+      await onSalvar(dados);
+    } catch (erro) {
+      toast.erro(erro.message);
+      setSalvando(false);
+    }
   }
-}
 
   return (
     <div className="modal-fundo">
@@ -110,8 +111,6 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
               </div>
             ))}
           </div>
-
-          {erroGeral && <div className="aviso erro">{erroGeral}</div>}
 
           <div className="modal-rodape">
             <button type="button" className="btn-secundario" onClick={onFechar}>Cancelar</button>

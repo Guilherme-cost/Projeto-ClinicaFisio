@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { useToast } from "./toastContext";
 import { LuX } from "react-icons/lu";
+import { useToast } from "./toastContext";
 import {
   formatarCpf,
   formatarTelefone,
   somenteDigitos,
 } from "../utils/formatadores";
-
-const toast = useToast();
 
 const VAZIO = {
   nome: "",
@@ -35,6 +33,8 @@ function Campo({ id, rotulo, erro, cheio, multilinha, ...props }) {
 }
 
 function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
+  const toast = useToast(); // <- dentro da função
+
   const [modo, setModo] = useState(modoInicial); // "novo" | "ver" | "editar"
   const [form, setForm] = useState(paciente ? { ...VAZIO, ...paciente } : VAZIO);
   const [erros, setErros] = useState({});
@@ -59,18 +59,18 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
     return e;
   }
 
- async function salvar(evento) {
-  evento.preventDefault();
-  const e = validar();
-  if (Object.keys(e).length > 0) {
-    setErros(e);
-    toast.erro("Corrija os campos destacados.");
-    return;
+  async function salvar(evento) {
+    evento.preventDefault();
+    const e = validar();
+    if (Object.keys(e).length > 0) {
+      setErros(e);
+      toast.erro("Corrija os campos destacados.");
+      return;
+    }
+    setSalvando(true);
+    await onSalvar({ ...form, nome: form.nome.trim() });
+    setSalvando(false);
   }
-  setSalvando(true);
-  await onSalvar({ ...form, nome: form.nome.trim() });
-  setSalvando(false);
-}
 
   // Cancelar a edição: se veio da visualização, volta para ela
   function cancelarEdicao() {
@@ -117,7 +117,6 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
         <div className="linha-degrade" />
 
         <form onSubmit={salvar} noValidate>
-          {/* fieldset disabled trava todos os campos de uma vez */}
           <fieldset className="modal-grid" disabled={somenteLeitura}>
             <Campo
               id="nome"
@@ -192,7 +191,6 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
                 <button key="fechar" type="button" className="btn-secundario" onClick={onFechar}>
                   Fechar
                 </button>
-                {/* As "keys" evitam que o React reaproveite este botão como o de salvar */}
                 <button key="editar" type="button" className="btn-editar" onClick={() => setModo("editar")}>
                   Editar
                 </button>
