@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
+import { useToast } from "./toastContext";
 
 function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
   const [form, setForm] = useState(() => {
+    const toast = useToast();
     const valores = {};
     campos.forEach((c) => {
       valores[c.chave] = inicial?.[c.chave] ?? "";
@@ -10,7 +12,6 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
     return valores;
   });
   const [erros, setErros] = useState({});
-  const [erroGeral, setErroGeral] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   function alterar(campo, valor) {
@@ -37,28 +38,28 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
   }
 
   async function enviar(evento) {
-    evento.preventDefault();
-    const e = validar();
-    if (Object.keys(e).length > 0) {
-      setErros(e);
-      return;
-    }
-
-    const dados = inicial?.id ? { id: inicial.id } : {};
-    campos.forEach((c) => {
-      const v = form[c.chave];
-      dados[c.chave] = c.tipo === "number" ? Number(v) : typeof v === "string" ? v.trim() : v;
-    });
-
-    setSalvando(true);
-    setErroGeral("");
-    try {
-      await onSalvar(dados);
-    } catch (erro) {
-      setErroGeral(erro.message);
-      setSalvando(false);
-    }
+  evento.preventDefault();
+  const e = validar();
+  if (Object.keys(e).length > 0) {
+    setErros(e);
+    toast.erro("Corrija os campos destacados.");
+    return;
   }
+
+  const dados = inicial?.id ? { id: inicial.id } : {};
+  campos.forEach((c) => {
+    const v = form[c.chave];
+    dados[c.chave] = c.tipo === "number" ? Number(v) : typeof v === "string" ? v.trim() : v;
+  });
+
+  setSalvando(true);
+  try {
+    await onSalvar(dados);
+  } catch (erro) {
+    toast.erro(erro.message);
+    setSalvando(false);
+  }
+}
 
   return (
     <div className="modal-fundo">

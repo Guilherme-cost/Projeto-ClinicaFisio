@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "../../components/toastContext";
 import { LuPencil, LuPower, LuPlus } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
 import { listarCadastro, salvarCadastro, alternarStatusCadastro } from "../../services/configService";
@@ -8,10 +9,10 @@ function AbaCadastro({ entidade }) {
   const cfg = CADASTROS[entidade];
 
   const [itens, setItens] = useState([]);
+  const toast = useToast();
   const [especialidades, setEspecialidades] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modal, setModal] = useState(null); // { item } ou null
-  const [msg, setMsg] = useState(null);
 
   async function carregar() {
     const [lista, esp] = await Promise.all([
@@ -28,16 +29,17 @@ function AbaCadastro({ entidade }) {
   }, [entidade]);
 
   async function salvar(dados) {
-    await salvarCadastro(entidade, dados);
-    await carregar();
-    setModal(null);
-    setMsg({ tipo: "ok", texto: `${cfg.singular[0].toUpperCase()}${cfg.singular.slice(1)} salvo(a).` });
-  }
+  await salvarCadastro(entidade, dados);
+  await carregar();
+  setModal(null);
+  toast.sucesso("Cadastro salvo.");
+}
 
-  async function alternarStatus(id) {
-    await alternarStatusCadastro(entidade, id);
-    await carregar();
-  }
+async function alternarStatus(id) {
+  await alternarStatusCadastro(entidade, id);
+  await carregar();
+  toast.sucesso("Status atualizado.");
+}
 
   const colunas = cfg.colunas(especialidades);
 
@@ -53,8 +55,6 @@ function AbaCadastro({ entidade }) {
           {cfg.novo}
         </button>
       </div>
-
-      {msg && <div className={`aviso ${msg.tipo}`}>{msg.texto}</div>}
 
       <div className="tabela-wrapper">
         <table className="tabela">

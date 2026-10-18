@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useToast } from "./toastContext";
 import { LuX } from "react-icons/lu";
 import {
   formatarCpf,
   formatarTelefone,
   somenteDigitos,
 } from "../utils/formatadores";
+
+const toast = useToast();
 
 const VAZIO = {
   nome: "",
@@ -56,17 +59,18 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
     return e;
   }
 
-  async function salvar(evento) {
-    evento.preventDefault();
-    const e = validar();
-    if (Object.keys(e).length > 0) {
-      setErros(e);
-      return;
-    }
-    setSalvando(true);
-    await onSalvar({ ...form, nome: form.nome.trim() });
-    setSalvando(false);
+ async function salvar(evento) {
+  evento.preventDefault();
+  const e = validar();
+  if (Object.keys(e).length > 0) {
+    setErros(e);
+    toast.erro("Corrija os campos destacados.");
+    return;
   }
+  setSalvando(true);
+  await onSalvar({ ...form, nome: form.nome.trim() });
+  setSalvando(false);
+}
 
   // Cancelar a edição: se veio da visualização, volta para ela
   function cancelarEdicao() {

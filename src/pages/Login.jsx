@@ -1,24 +1,24 @@
 import { useState } from "react";
-import { primeiraTelaPermitida } from "../services/configService";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../components/toastContext";
+import { primeiraTelaPermitida } from "../services/configService";
 import "./Login.css";
 
 function Login() {
   const [usuario, setUsuario] = useState("");
   const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState("");
   const navigate = useNavigate();
+  const toast = useToast();
 
   function handleSubmit(e) {
     e.preventDefault();
 
     if (!usuario || !senha) {
-      setErro("Preencha usuário e senha.");
+      toast.erro("Preencha usuário e senha.");
       return;
     }
 
     // Por enquanto é fake. Depois chamaremos a API em C#.
-    setErro("");
     navigate(primeiraTelaPermitida() ?? "/agendamentos");
   }
 
@@ -67,8 +67,6 @@ function Login() {
             onChange={(e) => setSenha(e.target.value)}
             placeholder="Sua senha"
           />
-
-          {erro && <span className="erro">{erro}</span>}
 
           <button type="submit" className="btn-entrar">
             Entrar

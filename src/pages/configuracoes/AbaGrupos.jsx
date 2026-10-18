@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "../../components/toastContext";
 import { LuPlus, LuCheck } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
 import {
@@ -11,12 +12,12 @@ import {
 } from "../../services/configService";
 
 function AbaGrupos() {
+  const toast = useToast();
   const [grupos, setGrupos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [selecionadoId, setSelecionadoId] = useState(null);
   const [permissoes, setPermissoes] = useState([]);
   const [modalNovo, setModalNovo] = useState(false);
-  const [msg, setMsg] = useState(null);
 
   const souMaster = usuarioLogado().master;
 
@@ -30,7 +31,6 @@ function AbaGrupos() {
   function selecionar(grupo) {
     setSelecionadoId(grupo.id);
     setPermissoes(grupo.permissoes);
-    setMsg(null);
   }
 
   useEffect(() => {
@@ -49,43 +49,40 @@ function AbaGrupos() {
     grupo && [...permissoes].sort().join() !== [...grupo.permissoes].sort().join();
 
   async function salvarPermissoes() {
-    try {
-      await salvarGrupo({ id: grupo.id, nome: grupo.nome, permissoes });
-      await carregar();
-      setMsg({ tipo: "ok", texto: "Permissões salvas." });
-    } catch (e) {
-      setMsg({ tipo: "erro", texto: e.message });
-    }
-  }
-
-  async function alternarStatus() {
-    if (grupo.ativo) {
-      const afetados = usuariosDe(grupo.id).filter((u) => u.ativo).length;
-      const ok = window.confirm(
-        `Desativar o grupo "${grupo.nome}"?\n${afetados} usuário(s) ativo(s) deste grupo também serão desativados.`
-      );
-      if (!ok) return;
-    }
-    try {
-      await alternarStatusGrupo(grupo.id);
-      await carregar();
-      setMsg({
-        tipo: "ok",
-        texto: grupo.ativo
-          ? "Grupo desativado e usuários do grupo desativados."
-          : "Grupo reativado. Os usuários continuam inativos até serem reativados.",
-      });
-    } catch (e) {
-      setMsg({ tipo: "erro", texto: e.message });
-    }
-  }
-
-  async function criarGrupo(dados) {
-    const novo = await salvarGrupo({ nome: dados.nome, permissoes: [] });
+  try {
+    await salvarGrupo({ id: grupo.id, nome: grupo.nome, permissoes });
     await carregar();
-    selecionar(novo);
-    setModalNovo(false);
+    toast.sucesso("Permissões salvas.");
+  } catch (e) {
+    toast.erro(e.message);
   }
+}
+
+async function alternarStatus() {
+  if (grupo.ativo) {
+    const afetados = usuariosDe(grupo.id).filter((u) => u.ativo).length;
+    const ok = window.confirm(
+      `Desativar o grupo "${grupo.nome}"?\n${afetados} usuário(s) ativo(s) deste grupo também serão desativados.`
+    );
+    if (!ok) return;
+  }
+  try {
+    await alternarStatusGrupo(grupo.id);
+    await carregar();
+    if (grupo.ativo) toast.aviso("Grupo desativado e usuários do grupo desativados.");
+    else toast.info("Grupo reativado. Os usuários continuam inativos até serem reativados.");
+  } catch (e) {
+    toast.erro(e.message);
+  }
+}
+
+async function criarGrupo(dados) {
+  const novo = await salvarGrupo({ nome: dados.nome, permissoes: [] });
+  await carregar();
+  selecionar(novo);
+  setModalNovo(false);
+  toast.sucesso("Grupo criado.");
+}
 
   return (
     <>
@@ -168,8 +165,6 @@ function AbaGrupos() {
                 Ao desativar um grupo, <b>todos os usuários dele são desativados</b> automaticamente.
               </div>
             )}
-
-            {msg && <div className={`aviso ${msg.tipo}`}>{msg.texto}</div>}
 
             {podeEditar && (
               <div className="rodape-painel">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToast } from "../../components/toastContext";
 import { LuPlus, LuPencil, LuPower } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
 import {
@@ -12,11 +13,10 @@ import {
 function AbaUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [grupos, setGrupos] = useState([]);
-  const [modal, setModal] = useState(null); // { item } ou null
-  const [msg, setMsg] = useState(null);
+  const [modal, setModal] = useState(null); 
 
   const souMaster = usuarioLogado().master;
-
+  const toast = useToast();
   async function carregar() {
     const [u, g] = await Promise.all([listarUsuarios(), listarGrupos()]);
     setUsuarios(u.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
@@ -30,21 +30,21 @@ function AbaUsuarios() {
   const grupoDe = (id) => grupos.find((g) => g.id === id);
 
   async function salvar(dados) {
-    await salvarUsuario(dados);
-    await carregar();
-    setModal(null);
-    setMsg({ tipo: "ok", texto: "Usuário salvo." });
-  }
+  await salvarUsuario(dados);
+  await carregar();
+  setModal(null);
+  toast.sucesso(dados.id ? "Usuário atualizado." : "Usuário criado.");
+}
 
-  async function alternarStatus(id) {
-    try {
-      await alternarStatusUsuario(id);
-      await carregar();
-      setMsg(null);
-    } catch (e) {
-      setMsg({ tipo: "erro", texto: e.message });
-    }
+async function alternarStatus(id) {
+  try {
+    await alternarStatusUsuario(id);
+    await carregar();
+    toast.sucesso("Status do usuário atualizado.");
+  } catch (e) {
+    toast.erro(e.message);
   }
+}
 
   const gruposAtivos = grupos
     .filter((g) => g.ativo)
@@ -88,7 +88,6 @@ function AbaUsuarios() {
       {!souMaster && (
         <div className="aviso info">Você não é Master. Esta lista é somente para consulta.</div>
       )}
-      {msg && <div className={`aviso ${msg.tipo}`}>{msg.texto}</div>}
 
       <div className="tabela-wrapper">
         <table className="tabela">

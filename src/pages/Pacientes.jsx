@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "../components/toastContext";
 import {
   LuSearch,
   LuSlidersHorizontal,
@@ -32,6 +33,8 @@ const ORDEM_PADRAO = { campo: "nome", direcao: "asc" };
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [carregando, setCarregando] = useState(true);
+
+  const toast = useToast();
 
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
@@ -100,24 +103,27 @@ function Pacientes() {
   }
 
   async function alternarStatus(id) {
-    const atualizado = await alterarStatusPaciente(id);
-    setPacientes((lista) => lista.map((p) => (p.id === id ? atualizado : p)));
-  }
+  const atualizado = await alterarStatusPaciente(id);
+  setPacientes((lista) => lista.map((p) => (p.id === id ? atualizado : p)));
+  toast.sucesso(atualizado.ativo ? "Paciente ativado." : "Paciente desativado.");
+}
 
-  async function excluir(paciente) {
-    if (window.confirm(`Excluir o paciente ${paciente.nome}?`)) {
-      await excluirPaciente(paciente.id);
-      setPacientes((lista) => lista.filter((p) => p.id !== paciente.id));
-    }
+async function excluir(paciente) {
+  if (window.confirm(`Excluir o paciente ${paciente.nome}?`)) {
+    await excluirPaciente(paciente.id);
+    setPacientes((lista) => lista.filter((p) => p.id !== paciente.id));
+    toast.sucesso("Paciente excluído.");
   }
+}
 
-  async function salvar(dados) {
-    const salvo = await salvarPaciente(dados);
-    setPacientes((lista) =>
-      dados.id ? lista.map((p) => (p.id === salvo.id ? salvo : p)) : [...lista, salvo]
-    );
-    setModalPaciente(null);
-  }
+async function salvar(dados) {
+  const salvo = await salvarPaciente(dados);
+  setPacientes((lista) =>
+    dados.id ? lista.map((p) => (p.id === salvo.id ? salvo : p)) : [...lista, salvo]
+  );
+  setModalPaciente(null);
+  toast.sucesso(dados.id ? "Paciente atualizado." : "Paciente cadastrado.");
+}
 
   // ---------- Modal de filtros ----------
   function abrirFiltros() {

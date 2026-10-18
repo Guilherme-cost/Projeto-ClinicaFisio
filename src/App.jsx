@@ -1,29 +1,34 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ToastProvider from "./components/ToastProvider";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
-import Pacientes from "./pages/Pacientes";
 import Pagina from "./components/Pagina";
+import Pacientes from "./pages/Pacientes";
 import Configuracoes from "./pages/Configuracoes";
+import Dashboard from "./pages/Dashboard";
+import Agendamentos from "./pages/Agendamentos";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login />} />
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/login" element={<Login />} />
 
-        {/* Todas as páginas abaixo aparecem dentro do Layout (menu + topo) */}
-        <Route element={<Layout />}>
-          <Route path="/agendamentos" element={<Pagina titulo="Agendamentos" />} />
-          <Route path="/fila-de-espera" element={<Pagina titulo="Fila de Espera" />} />
-          <Route path="/pacientes" element={<Pacientes />} />          <Route path="/estoque" element={<Pagina titulo="Estoque" />} />
-          <Route path="/avisos" element={<Pagina titulo="Avisos" />} />
-          <Route path="/dashboard" element={<Pagina titulo="Dashboard" />} />
-          <Route path="/documentos" element={<Pagina titulo="Documentos" />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          <Route element={<Layout />}>
+            <Route path="/agendamentos" element={<Agendamentos />} />
+            <Route path="/fila-de-espera" element={<Pagina titulo="Fila de Espera" />} />
+            <Route path="/pacientes" element={<Pacientes />} />
+            <Route path="/estoque" element={<Pagina titulo="Estoque" />} />
+            <Route path="/avisos" element={<Pagina titulo="Avisos" />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/documentos" element={<Pagina titulo="Documentos" />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 
