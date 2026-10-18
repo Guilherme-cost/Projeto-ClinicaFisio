@@ -1,0 +1,476 @@
+/* =========================================================
+   Documentos: tela de emissão, folha impressa e aba Modelos
+   ========================================================= */
+
+/* ---------- Títulos e blocos ---------- */
+.doc-titulo {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #12263a;
+}
+
+.doc-titulo small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #5b6b7b;
+}
+
+.doc-div {
+  height: 1px;
+  margin: 14px 0;
+  background: #e1e8f0;
+}
+
+.doc-sec {
+  height: 38px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f3460;
+  background: #fff;
+  border: 2px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-sec:hover { background: #f3f8fd; }
+
+/* ---------- Cartões de tipo ---------- */
+.doc-tipos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.doc-tipo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  font-family: inherit;
+  text-align: left;
+  color: #12263a;
+  background: #fff;
+  border: 2px solid #e1e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.doc-tipo:hover { border-color: #c5d3e2; }
+
+.doc-tipo b { display: block; font-size: 14px; }
+.doc-tipo small { font-size: 11px; color: #5b6b7b; }
+
+.doc-tipo.on {
+  background: #eef5fc;
+  border-color: #2f80c4;
+  box-shadow: 0 4px 12px rgba(47, 128, 196, 0.18);
+}
+
+.doc-tipo.on b { color: #0f3460; }
+
+.doc-check {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #fff;
+  background: #fff;
+  border: 1px solid #9aa8b6;
+  border-radius: 4px;
+}
+
+.doc-tipo.on .doc-check {
+  background: #2f80c4;
+  border-color: #2f80c4;
+}
+
+/* ---------- Duas colunas ---------- */
+.doc-colunas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.doc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-metade { width: 50%; }
+
+.doc-cresce textarea {
+  min-height: 190px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+/* ---------- Prévia ---------- */
+.doc-previa {
+  padding: 12px;
+  background: #e8eef5;
+  border-radius: 8px;
+}
+
+.doc-previa .folha-impressao {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.doc-botoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.doc-imprimir,
+.doc-pdf {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-imprimir { color: #fff; background: #0f3460; border: none; }
+.doc-imprimir:hover { background: #0b2a50; }
+.doc-pdf { color: #3f4f5f; background: #fff; border: 1px solid #c9d1d9; }
+
+.doc-nota {
+  margin-left: auto;
+  font-size: 12px;
+  color: #5b6b7b;
+}
+
+/* ---------- Folha do documento ---------- */
+.folha-impressao { container-type: inline-size; }
+
+.fd {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 141.4cqw; /* proporção A4 */
+  padding: 6% 7%;
+  font-size: 2.7cqw;
+  line-height: 1.5;
+  color: #12263a;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  box-shadow: 0 8px 24px rgba(18, 38, 58, 0.18);
+}
+
+/* Quebra de linha automática: nada passa da borda da folha */
+.fd > * { min-width: 0; }
+
+.fd-texto,
+.fd-pedido,
+.fd-paciente,
+.fd-clinica {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.fd-topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.fd-marca b {
+  font-size: 1.9em;
+  background: linear-gradient(135deg, #2f80c4, #0f3460);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.fd-marca span {
+  margin-left: 0.5em;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #2f80c4;
+}
+
+.fd-num {
+  font-size: 0.85em;
+  text-align: right;
+  color: #5b6b7b;
+}
+
+.fd-linha {
+  height: 3px;
+  margin: 0.7em 0 1em;
+  background: linear-gradient(90deg, #2f80c4, #0f3460);
+  border-radius: 2px;
+}
+
+.fd-clinica { text-align: center; }
+.fd-clinica img { max-height: 3.6em; max-width: 60%; margin-bottom: 0.3em; }
+.fd-clinica h2 { margin: 0; font-size: 1.35em; }
+.fd-clinica p { margin: 0; font-size: 0.85em; color: #5b6b7b; }
+
+.fd-titulo {
+  margin: 1.8em 0 1.2em;
+  font-size: 1.3em;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.fd-paciente small {
+  display: block;
+  font-size: 0.9em;
+  color: #5b6b7b;
+}
+
+.fd-texto {
+  margin: 1.1em 0 0;
+  white-space: pre-line; /* respeita o Enter e quebra nas bordas */
+}
+
+.fd-pedido {
+  margin: 0.7em 0;
+  padding: 0.8em 1.1em;
+  white-space: pre-line;
+  background: #f5f8fb;
+  border-left: 4px solid #2f80c4;
+}
+
+.fd-espaco { flex: 1; }
+
+.fd-local {
+  margin-top: 1.4em;
+  text-align: center;
+}
+
+.fd-assinatura {
+  width: 55%;
+  margin: 3em auto 0;
+  padding-top: 0.3em;
+  text-align: center;
+  border-top: 1px solid #12263a;
+}
+
+.fd-assinatura small {
+  display: block;
+  font-size: 0.9em;
+  color: #5b6b7b;
+}
+
+.fd-rodape {
+  margin-top: 1.6em;
+  padding-top: 0.5em;
+  font-size: 0.75em;
+  text-align: center;
+  color: #7a8896;
+  border-top: 1px solid #e1e8f0;
+}
+
+/* ---------- Histórico ---------- */
+.doc-historico { max-width: 900px; }
+
+.doc-abrir {
+  height: 30px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f3460;
+  background: #fff;
+  border: 2px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-abrir:hover { background: #f3f8fd; }
+
+.doc-remover {
+  height: 30px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fff;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ---------- Aba Modelos (Configurações) ---------- */
+.modelos-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.modelos-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modelos-col h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #12263a;
+}
+
+.modelos-sub {
+  margin: -8px 0 0;
+  font-size: 13px;
+  color: #5b6b7b;
+}
+
+.doc-duas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.doc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-chip {
+  height: 34px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f4f5f;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-chip.on {
+  color: #fff;
+  background: linear-gradient(135deg, #2f80c4, #1c5a9a);
+  border-color: transparent;
+}
+
+.doc-variaveis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-variaveis span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #5b6b7b;
+}
+
+.doc-variaveis button {
+  padding: 2px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d5a9a;
+  background: #e3effa;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logo-envio {
+  height: 64px;
+  font-family: inherit;
+  font-weight: 700;
+  color: #1c6fb8;
+  background: #fff;
+  border: 2px dashed #b7c8da;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logo-atual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-atual img {
+  max-height: 64px;
+  max-width: 160px;
+  border: 1px solid #e1e8f0;
+  border-radius: 6px;
+}
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 1000px) {
+  .doc-tipos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .doc-colunas,
+  .modelos-grid { grid-template-columns: 1fr; }
+  .doc-metade { width: 100%; }
+}
+
+/* ---------- Impressão: só a folha sai no papel ---------- */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    height: 297mm !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  body * { visibility: hidden !important; }
+
+  .folha-impressao,
+  .folha-impressao * { visibility: visible !important; }
+
+  .doc-previa .folha-impressao {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 210mm;
+    max-width: none;
+    margin: 0;
+  }
+
+  .fd {
+    min-height: 297mm;
+    padding: 18mm 20mm;
+    font-size: 11.5pt;
+    border: none;
+    box-shadow: none;
+  }
+
+  .fd-marca b,
+  .fd-linha,
+  .fd-pedido {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

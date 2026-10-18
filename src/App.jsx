@@ -3,6 +3,7 @@ import ToastProvider from "./components/ToastProvider";
 import Login from "./pages/Login";
 import Avisos from "./pages/Avisos";
 import Layout from "./components/Layout";
+import Documentos from "./pages/Documentos";
 import Pagina from "./components/Pagina";
 import Pacientes from "./pages/Pacientes";
 import FilaEspera from "./pages/FilaEspera";
@@ -25,7 +26,7 @@ function App() {
             <Route path="/estoque" element={<Pagina titulo="Estoque" />} />
             <Route path="/avisos" element={<Avisos />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/documentos" element={<Pagina titulo="Documentos" />} />
+            <Route path="/documentos" element={<Documentos />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
           </Route>
         </Routes>
