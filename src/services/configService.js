@@ -11,17 +11,19 @@ export const PAGINAS = [
 
 const TODAS = PAGINAS.map((p) => p.chave);
 
-// Para testar como outro usuário, troque por 2 (Carla Nunes, grupo Recepção)
+// Para testar como outro usuário, troque o número:
+// 1 = Admin Master | 2 = Carla Nunes (Recepção) | 6 = Paulo Reis (Supervisores)
 export const ID_USUARIO_LOGADO = 1;
 
 const clonar = (x) => structuredClone(x);
 
 // ---------- Dados iniciais ----------
 let grupos = [
-  { id: 1, nome: "Master (Administração)", master: true, ativo: true, permissoes: [...TODAS] },
-  { id: 2, nome: "Fisioterapeutas", master: false, ativo: true, permissoes: ["/agendamentos", "/fila-de-espera", "/pacientes", "/avisos"] },
-  { id: 3, nome: "Recepção", master: false, ativo: true, permissoes: ["/agendamentos", "/fila-de-espera", "/pacientes", "/avisos"] },
-  { id: 4, nome: "Estagiários", master: false, ativo: false, permissoes: ["/agendamentos", "/pacientes"] },
+  { id: 1, nome: "Master (Administração)", master: true, ativo: true, gerenciaAvisos: true, permissoes: [...TODAS] },
+  { id: 2, nome: "Fisioterapeutas", master: false, ativo: true, gerenciaAvisos: false, permissoes: ["/agendamentos", "/fila-de-espera", "/pacientes", "/avisos"] },
+  { id: 3, nome: "Recepção", master: false, ativo: true, gerenciaAvisos: false, permissoes: ["/agendamentos", "/fila-de-espera", "/pacientes", "/avisos"] },
+  { id: 4, nome: "Estagiários", master: false, ativo: false, gerenciaAvisos: false, permissoes: ["/agendamentos", "/pacientes"] },
+  { id: 5, nome: "Supervisores", master: false, ativo: true, gerenciaAvisos: true, permissoes: ["/agendamentos", "/fila-de-espera", "/pacientes", "/avisos", "/dashboard"] },
 ];
 
 let usuarios = [
@@ -30,6 +32,7 @@ let usuarios = [
   { id: 3, nome: "Rafael Pires", login: "rafael.pires", grupoId: 2, ativo: true },
   { id: 4, nome: "Júlia Ramos", login: "julia.ramos", grupoId: 4, ativo: false },
   { id: 5, nome: "Marcos Lima", login: "marcos.lima", grupoId: 4, ativo: false },
+  { id: 6, nome: "Paulo Reis", login: "paulo.reis", grupoId: 5, ativo: true },
 ];
 
 const cadastros = {
@@ -52,8 +55,8 @@ const cadastros = {
 };
 
 const proximoId = {
-  grupo: 5,
-  usuario: 6,
+  grupo: 6,
+  usuario: 7,
   especialidades: 5,
   procedimentos: 5,
   professores: 3,
@@ -71,6 +74,12 @@ export function podeVer(caminho) {
   return ativo && grupo.ativo && grupo.permissoes.includes(caminho);
 }
 
+// Master ou grupo com a permissão "gerencia avisos"
+export function podeGerenciarAvisos() {
+  const { ativo, grupo } = usuarioLogado();
+  return ativo && grupo.ativo && (grupo.master || grupo.gerenciaAvisos);
+}
+
 export function primeiraTelaPermitida() {
   return PAGINAS.find((p) => podeVer(p.chave))?.chave ?? null;
 }
@@ -86,7 +95,7 @@ export async function listarGrupos() {
   return clonar(grupos);
 }
 
-export async function salvarGrupo({ id, nome, permissoes = [] }) {
+export async function salvarGrupo({ id, nome, permissoes = [], gerenciaAvisos }) {
   exigirMaster();
 
   const nomeLimpo = nome.trim();
@@ -97,13 +106,23 @@ export async function salvarGrupo({ id, nome, permissoes = [] }) {
 
   if (id) {
     const atual = grupos.find((g) => g.id === id);
-    // O grupo Master sempre enxerga todas as telas
+    // O grupo Master sempre enxerga tudo e sempre gerencia avisos
     const perms = atual.master ? [...TODAS] : permissoes;
-    grupos = grupos.map((g) => (g.id === id ? { ...g, nome: nomeLimpo, permissoes: perms } : g));
+    const gerencia = atual.master ? true : gerenciaAvisos ?? atual.gerenciaAvisos;
+    grupos = grupos.map((g) =>
+      g.id === id ? { ...g, nome: nomeLimpo, permissoes: perms, gerenciaAvisos: gerencia } : g
+    );
     return clonar(grupos.find((g) => g.id === id));
   }
 
-  const novo = { id: proximoId.grupo++, nome: nomeLimpo, master: false, ativo: true, permissoes };
+  const novo = {
+    id: proximoId.grupo++,
+    nome: nomeLimpo,
+    master: false,
+    ativo: true,
+    gerenciaAvisos: !!gerenciaAvisos,
+    permissoes,
+  };
   grupos = [...grupos, novo];
   return clonar(novo);
 }

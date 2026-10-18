@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LuCalendarDays,
@@ -10,6 +11,7 @@ import {
   LuSettings,
 } from "react-icons/lu";
 import { podeVer, usuarioLogado } from "../services/configService";
+import { recalcularNaoLidos, useNaoLidos } from "../services/avisosService";
 import AcessoNegado from "./AcessoNegado";
 import "./Layout.css";
 
@@ -31,8 +33,12 @@ function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const usuario = usuarioLogado();
+  const naoLidos = useNaoLidos();
 
-  // Só aparece no menu o que o grupo do usuário pode ver
+  useEffect(() => {
+    recalcularNaoLidos();
+  }, []);
+
   const principalVisivel = menuPrincipal.filter((i) => podeVer(i.caminho));
   const adminVisivel = menuAdmin.filter((i) => podeVer(i.caminho));
 
@@ -45,6 +51,15 @@ function Layout() {
       >
         <span className="icone">{item.icone}</span>
         <span className="texto">{item.nome}</span>
+
+        {item.caminho === "/avisos" && naoLidos > 0 && (
+          <>
+            <span className="menu-ponto" role="img" aria-label={`${naoLidos} avisos novos`} />
+            <span className="menu-pilula">
+              {naoLidos} {naoLidos === 1 ? "novo" : "novos"}
+            </span>
+          </>
+        )}
       </NavLink>
     ));
   }

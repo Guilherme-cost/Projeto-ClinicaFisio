@@ -5,12 +5,12 @@ import { HORARIOS, STATUS, horariosOcupados } from "../services/agendamentosServ
 
 const paraNumero = (v) => (v === "" ? "" : Number(v));
 
-function AgendamentoModal({ agendamento, dataInicial, catalogo, onSalvar, onFechar }) {
+function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSalvar, onFechar }) {
   const toast = useToast();
   const novo = !agendamento;
 
   const [form, setForm] = useState(() => ({
-    pacienteId: agendamento?.pacienteId ?? "",
+    pacienteId: agendamento?.pacienteId ?? preenchido?.pacienteId ?? "",
     procedimentoId: agendamento?.procedimentoId ?? "",
     professorId: agendamento?.professorId ?? "",
     data: agendamento?.data ?? dataInicial,

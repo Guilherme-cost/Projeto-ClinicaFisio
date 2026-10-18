@@ -517,5 +517,16 @@
   .barra-busca { flex-wrap: wrap; }
   .contagem { display: none; }
   .modal-grid { grid-template-columns: 1fr; }
-  .campo.cheio { grid-column: auto; }
+  .campo.cheio { grid-column: 1 / -1;}
+}
+
+/* Formulário largo com 3 colunas (usado em Avisos) */
+.modal.form-largo { max-width: 760px; }
+
+.modal-grid.tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 800px) {
+  .modal-grid.tres { grid-template-columns: 1fr; }
 }

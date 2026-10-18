@@ -1,0 +1,215 @@
+/* ---------- Filtros ---------- */
+.av-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.av-tipos { margin-bottom: 16px; }
+
+.av-rotulo {
+  margin-right: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #5b6b7b;
+}
+
+.av-espaco { flex: 1; }
+
+.av-chip {
+  height: 34px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3f4f5f;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.av-chip:hover { background: #f3f8fd; }
+
+.av-chip.on {
+  color: #fff;
+  background: linear-gradient(135deg, #2f80c4, #1c5a9a);
+  border-color: transparent;
+}
+
+.av-link {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c6fb8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.av-link:hover { text-decoration: underline; }
+.av-link:disabled { opacity: 0.45; cursor: default; text-decoration: none; }
+
+/* ---------- Cards ---------- */
+.av-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.av-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e1e8f0;
+  border-top: 4px solid var(--cor);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(18, 38, 58, 0.12);
+}
+
+.av-card.urgente     { --cor: #dc2626; }
+.av-card.importante  { --cor: #d97706; }
+.av-card.informativo { --cor: #2f80c4; }
+
+.av-card.nao-lido { cursor: pointer; }
+.av-card.nao-lido:hover { box-shadow: 0 6px 16px rgba(18, 38, 58, 0.2); }
+
+.av-card.inativo {
+  --cor: #aab4be;
+  background: #f3f5f7;
+}
+
+.av-card.inativo h2,
+.av-card.inativo p { color: #6b7886; }
+
+.av-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.av-nivel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-sizing: border-box;
+  width: 108px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 4px;
+}
+
+.av-nivel i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.av-nivel.urgente     { color: #991b1b; background: #fdecec; border-color: #f1a5a5; }
+.av-nivel.urgente i   { background: #dc2626; }
+.av-nivel.importante  { color: #92400e; background: #fff3dd; border-color: #f0c987; }
+.av-nivel.importante i { background: #d97706; }
+.av-nivel.informativo { color: #1d5a9a; background: #e3effa; border-color: #b7d4ee; }
+.av-nivel.informativo i { background: #2f80c4; }
+
+.av-tag {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #475569;
+  background: #eef1f5;
+  border-radius: 4px;
+}
+
+.av-novo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.av-novo i {
+  width: 9px;
+  height: 9px;
+  background: #ef4444;
+  border-radius: 50%;
+}
+
+.av-card h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.2;
+  color: #12263a;
+}
+
+.av-card p {
+  flex: 1;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3f4f5f;
+}
+
+.av-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #edf1f5;
+}
+
+.av-meta {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5b6b7b;
+}
+
+.av-meta b { color: #12263a; }
+.av-vencido { font-weight: 700; color: #991b1b; }
+
+.av-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.av-acoes .acao {
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+}
+
+.av-reativar {
+  height: 30px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f3460;
+  background: #fff;
+  border: 2px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.av-reativar:hover { background: #f3f8fd; }

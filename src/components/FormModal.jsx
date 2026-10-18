@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useToast } from "./toastContext";
 
-function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
+function FormModal({ titulo, subtitulo, campos, inicial, largo = false, onSalvar, onFechar }) {
   const toast = useToast();
 
   const [form, setForm] = useState(() => {
@@ -34,6 +34,7 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
       if (c.obrigatorio && vazio) e[c.chave] = "Campo obrigatório.";
       else if (c.tipo === "number" && !vazio && Number(v) <= 0) e[c.chave] = "Informe um valor maior que zero.";
       else if (c.minimo && !vazio && String(v).length < c.minimo) e[c.chave] = `Mínimo de ${c.minimo} caracteres.`;
+      else if (c.tipo === "date" && c.min && !vazio && v < c.min) e[c.chave] = "A data não pode ser anterior a hoje.";
     });
     return e;
   }
@@ -64,7 +65,7 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
 
   return (
     <div className="modal-fundo">
-      <div className="modal" role="dialog" aria-modal="true">
+      <div className={`modal ${largo ? "form-largo" : ""}`} role="dialog" aria-modal="true">
         <div className="modal-topo">
           <div>
             <h3>{titulo}</h3>
@@ -78,9 +79,9 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
         <div className="linha-degrade" />
 
         <form onSubmit={enviar} noValidate>
-          <div className="filtro-corpo">
+          <div className={largo ? "modal-grid tres" : "filtro-corpo"}>
             {campos.map((c) => (
-              <div className="campo" key={c.chave}>
+              <div className={`campo ${c.cheio ? "cheio" : ""}`} key={c.chave}>
                 <label htmlFor={`campo-${c.chave}`}>{c.rotulo}</label>
 
                 {c.tipo === "select" ? (
@@ -94,12 +95,20 @@ function FormModal({ titulo, subtitulo, campos, inicial, onSalvar, onFechar }) {
                       <option key={o.valor} value={o.valor}>{o.rotulo}</option>
                     ))}
                   </select>
+                ) : c.tipo === "textarea" ? (
+                  <textarea
+                    id={`campo-${c.chave}`}
+                    rows={c.linhas ?? 4}
+                    value={form[c.chave]}
+                    placeholder={c.placeholder}
+                    onChange={(e) => alterar(c.chave, e.target.value)}
+                  />
                 ) : (
                   <input
                     id={`campo-${c.chave}`}
                     type={c.tipo ?? "text"}
                     step={c.passo}
-                    min={c.tipo === "number" ? 0 : undefined}
+                    min={c.min ?? (c.tipo === "number" ? 0 : undefined)}
                     value={form[c.chave]}
                     placeholder={c.placeholder}
                     onChange={(e) => alterar(c.chave, e.target.value)}

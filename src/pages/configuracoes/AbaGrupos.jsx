@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useToast } from "../../components/toastContext";
 import { LuPlus, LuCheck } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
+import { useToast } from "../../components/toastContext";
 import {
   PAGINAS,
   listarGrupos,
@@ -13,10 +13,12 @@ import {
 
 function AbaGrupos() {
   const toast = useToast();
+
   const [grupos, setGrupos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [selecionadoId, setSelecionadoId] = useState(null);
   const [permissoes, setPermissoes] = useState([]);
+  const [gerencia, setGerencia] = useState(false);
   const [modalNovo, setModalNovo] = useState(false);
 
   const souMaster = usuarioLogado().master;
@@ -31,6 +33,7 @@ function AbaGrupos() {
   function selecionar(grupo) {
     setSelecionadoId(grupo.id);
     setPermissoes(grupo.permissoes);
+    setGerencia(grupo.master || !!grupo.gerenciaAvisos);
   }
 
   useEffect(() => {
@@ -45,44 +48,46 @@ function AbaGrupos() {
   }
 
   const podeEditar = grupo && souMaster && !grupo.master;
+  const gerenciaAtual = grupo ? grupo.master || !!grupo.gerenciaAvisos : false;
   const alterado =
-    grupo && [...permissoes].sort().join() !== [...grupo.permissoes].sort().join();
+    grupo &&
+    ([...permissoes].sort().join() !== [...grupo.permissoes].sort().join() || gerencia !== gerenciaAtual);
 
   async function salvarPermissoes() {
-  try {
-    await salvarGrupo({ id: grupo.id, nome: grupo.nome, permissoes });
-    await carregar();
-    toast.sucesso("Permissões salvas.");
-  } catch (e) {
-    toast.erro(e.message);
+    try {
+      await salvarGrupo({ id: grupo.id, nome: grupo.nome, permissoes, gerenciaAvisos: gerencia });
+      await carregar();
+      toast.sucesso("Permissões salvas.");
+    } catch (e) {
+      toast.erro(e.message);
+    }
   }
-}
 
-async function alternarStatus() {
-  if (grupo.ativo) {
-    const afetados = usuariosDe(grupo.id).filter((u) => u.ativo).length;
-    const ok = window.confirm(
-      `Desativar o grupo "${grupo.nome}"?\n${afetados} usuário(s) ativo(s) deste grupo também serão desativados.`
-    );
-    if (!ok) return;
+  async function alternarStatus() {
+    if (grupo.ativo) {
+      const afetados = usuariosDe(grupo.id).filter((u) => u.ativo).length;
+      const ok = window.confirm(
+        `Desativar o grupo "${grupo.nome}"?\n${afetados} usuário(s) ativo(s) deste grupo também serão desativados.`
+      );
+      if (!ok) return;
+    }
+    try {
+      await alternarStatusGrupo(grupo.id);
+      await carregar();
+      if (grupo.ativo) toast.aviso("Grupo desativado e usuários do grupo desativados.");
+      else toast.info("Grupo reativado. Os usuários continuam inativos até serem reativados.");
+    } catch (e) {
+      toast.erro(e.message);
+    }
   }
-  try {
-    await alternarStatusGrupo(grupo.id);
-    await carregar();
-    if (grupo.ativo) toast.aviso("Grupo desativado e usuários do grupo desativados.");
-    else toast.info("Grupo reativado. Os usuários continuam inativos até serem reativados.");
-  } catch (e) {
-    toast.erro(e.message);
-  }
-}
 
-async function criarGrupo(dados) {
-  const novo = await salvarGrupo({ nome: dados.nome, permissoes: [] });
-  await carregar();
-  selecionar(novo);
-  setModalNovo(false);
-  toast.sucesso("Grupo criado.");
-}
+  async function criarGrupo(dados) {
+    const novo = await salvarGrupo({ nome: dados.nome, permissoes: [] });
+    await carregar();
+    selecionar(novo);
+    setModalNovo(false);
+    toast.sucesso("Grupo criado.");
+  }
 
   return (
     <>
@@ -154,11 +159,26 @@ async function criarGrupo(dados) {
                   </label>
                 );
               })}
+
+              {/* Permissão especial: criar e gerenciar avisos */}
+              <label className="perm-linha">
+                <input
+                  type="checkbox"
+                  checked={gerencia}
+                  disabled={!podeEditar}
+                  onChange={() => setGerencia((g) => !g)}
+                />
+                <span className="perm-caixa">{gerencia && <LuCheck />}</span>
+                <span className="perm-nome">Pode criar e gerenciar avisos</span>
+                <span className={`perm-estado ${gerencia ? "sim" : "nao"}`}>
+                  {gerencia ? "Sim" : "Não"}
+                </span>
+              </label>
             </div>
 
             {grupo.master ? (
               <div className="aviso info">
-                O grupo Master sempre acessa todas as telas e não pode ser desativado.
+                O grupo Master sempre acessa todas as telas, gerencia avisos e não pode ser desativado.
               </div>
             ) : (
               <div className="aviso alerta">
