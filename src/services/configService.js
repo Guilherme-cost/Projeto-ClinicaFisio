@@ -1,3 +1,6 @@
+import { lerSessao } from "./sessao";
+import { PESO_MASTER, PESO_MINIMO, podeVerTela, primeiraTelaDoUsuario } from "../config/permissoes";
+
 export const PAGINAS = [
   { chave: "/agendamentos", nome: "Agendamentos" },
   { chave: "/fila-de-espera", nome: "Fila de Espera" },
@@ -11,9 +14,6 @@ export const PAGINAS = [
 
 const TODAS = PAGINAS.map((p) => p.chave);
 
-// Para testar como outro usuário, troque o número:
-// 1 = Admin Master | 2 = Carla Nunes (Recepção) | 6 = Paulo Reis (Supervisores)
-export const ID_USUARIO_LOGADO = 1;
 
 const clonar = (x) => structuredClone(x);
 
@@ -63,25 +63,33 @@ const proximoId = {
 };
 
 // ---------- Sessão e permissões ----------
+// O usuário vem da sessão do login (API). Aqui só adaptamos ao formato
+// que as telas ainda mockadas esperam.
+const VISITANTE = { id: 0, nome: "", login: "", ativo: false, peso: 0, master: false, grupo: { nome: "" } };
+
 export function usuarioLogado() {
-  const u = usuarios.find((x) => x.id === ID_USUARIO_LOGADO);
-  const grupo = grupos.find((g) => g.id === u.grupoId);
-  return { ...u, grupo: clonar(grupo), master: grupo.master };
+  const u = lerSessao()?.usuario;
+  if (!u) return VISITANTE;
+
+  return {
+    ...u,
+    ativo: !u.inativo,
+    master: u.peso >= PESO_MASTER,
+    grupo: { id: u.idGrupo, nome: u.grupo },
+  };
 }
 
 export function podeVer(caminho) {
-  const { ativo, grupo } = usuarioLogado();
-  return ativo && grupo.ativo && grupo.permissoes.includes(caminho);
+  return podeVerTela(usuarioLogado(), caminho);
 }
 
-// Master ou grupo com a permissão "gerencia avisos"
 export function podeGerenciarAvisos() {
-  const { ativo, grupo } = usuarioLogado();
-  return ativo && grupo.ativo && (grupo.master || grupo.gerenciaAvisos);
+  const u = usuarioLogado();
+  return u.ativo && u.peso >= PESO_MINIMO.gerenciarAvisos;
 }
 
 export function primeiraTelaPermitida() {
-  return PAGINAS.find((p) => podeVer(p.chave))?.chave ?? null;
+  return primeiraTelaDoUsuario(usuarioLogado());
 }
 
 function exigirMaster() {
@@ -191,7 +199,7 @@ export async function alternarStatusUsuario(id) {
   exigirMaster();
 
   const u = usuarios.find((x) => x.id === id);
-  if (u.ativo && id === ID_USUARIO_LOGADO) {
+  if (u.ativo && id === usuarioLogado().id) {
     throw new Error("Você não pode desativar o seu próprio usuário.");
   }
 

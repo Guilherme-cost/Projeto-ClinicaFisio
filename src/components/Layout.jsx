@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LuCalendarDays,
   LuClock,
@@ -10,7 +10,8 @@ import {
   LuFileText,
   LuSettings,
 } from "react-icons/lu";
-import { podeVer, usuarioLogado } from "../services/configService";
+import { podeVerTela } from "../config/permissoes";
+import { useAuth } from "../contexts/AuthContext";
 import { recalcularNaoLidos, useNaoLidos } from "../services/avisosService";
 import AcessoNegado from "./AcessoNegado";
 import "./Layout.css";
@@ -29,18 +30,22 @@ const menuAdmin = [
   { nome: "Configurações", icone: <LuSettings />, caminho: "/configuracoes" },
 ];
 
+const maiusculo = (texto) => (texto ? String(texto).toUpperCase() : "—");
+
 function Layout() {
-  const navigate = useNavigate();
+  const { usuario, sair } = useAuth();
   const { pathname } = useLocation();
-  const usuario = usuarioLogado();
   const naoLidos = useNaoLidos();
 
   useEffect(() => {
     recalcularNaoLidos();
   }, []);
 
-  const principalVisivel = menuPrincipal.filter((i) => podeVer(i.caminho));
-  const adminVisivel = menuAdmin.filter((i) => podeVer(i.caminho));
+  if (!usuario) return null; // a PrivateRoute já redireciona para o login
+
+  // Só aparece no menu o que o peso do usuário alcança
+  const principalVisivel = menuPrincipal.filter((i) => podeVerTela(usuario, i.caminho));
+  const adminVisivel = menuAdmin.filter((i) => podeVerTela(usuario, i.caminho));
 
   function renderItens(lista) {
     return lista.map((item) => (
@@ -74,13 +79,19 @@ function Layout() {
 
         <div className="topbar-usuario">
           <span>
-            Perfil: <strong>{usuario.grupo.nome.toUpperCase()}</strong>
+            Empresa: <strong>{maiusculo(usuario.empresa)}</strong>
           </span>
           <span>
-            Usuário: <strong>{usuario.login.toUpperCase()}</strong>
+            Grupo: <strong>{maiusculo(usuario.grupo)}</strong>
+          </span>
+          <span>
+            Perfil: <strong>{maiusculo(usuario.statusUsuario)}</strong>
+          </span>
+          <span>
+            Usuário: <strong>{maiusculo(usuario.nome)}</strong>
           </span>
           <span className="separador" />
-          <button className="btn-sair" onClick={() => navigate("/login")}>
+          <button className="btn-sair" onClick={sair}>
             Sair
           </button>
         </div>
@@ -106,7 +117,7 @@ function Layout() {
 
       <div className="conteudo">
         <main className="area-pagina">
-          {podeVer(pathname) ? <Outlet /> : <AcessoNegado />}
+          {podeVerTela(usuario, pathname) ? <Outlet /> : <AcessoNegado />}
         </main>
       </div>
     </div>
