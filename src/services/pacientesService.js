@@ -1,38 +1,77 @@
-let pacientes = [
-  { id: 1, nome: "Aline Moraes", cpf: "20345678900", telefone: "21999990000", email: "aline@email.com", nascimento: "1993-03-14", cidade: "Rio de Janeiro", endereco: "Rua das Flores, 120, Tijuca", observacoes: "Dor lombar crônica.", ativo: true },
-  { id: 2, nome: "Amanda Rocha", cpf: "82345678911", telefone: "21996778899", email: "", nascimento: "2000-07-02", cidade: "Rio de Janeiro", endereco: "", observacoes: "", ativo: true },
-  { id: 3, nome: "Ana Costa", cpf: "11223344500", telefone: "21988776655", email: "", nascimento: "1990-11-23", cidade: "Niterói", endereco: "", observacoes: "", ativo: true },
-  { id: 4, nome: "Anderson Cunha", cpf: "33345678922", telefone: "21993335566", email: "", nascimento: "1994-01-30", cidade: "Rio de Janeiro", endereco: "", observacoes: "", ativo: false },
-  { id: 5, nome: "Beatriz Lopes", cpf: "16345678933", telefone: "21995556666", email: "", nascimento: "1998-09-08", cidade: "Duque de Caxias", endereco: "", observacoes: "", ativo: true },
-  { id: 6, nome: "Bianca Silveira", cpf: "40345678944", telefone: "21990002244", email: "", nascimento: "1992-05-19", cidade: "Rio de Janeiro", endereco: "", observacoes: "", ativo: true },
-  { id: 7, nome: "Bruno Ribeiro", cpf: "92345678955", telefone: "21997889900", email: "", nascimento: "1994-12-01", cidade: "Niterói", endereco: "", observacoes: "", ativo: false },
-  { id: 8, nome: "Carlos Almeida", cpf: "55566677788", telefone: "21981234567", email: "", nascimento: "1968-06-25", cidade: "Rio de Janeiro", endereco: "", observacoes: "", ativo: true },
-  { id: 9, nome: "Daniela Freitas", cpf: "99988877766", telefone: "21987654321", email: "", nascimento: "1985-04-10", cidade: "São Gonçalo", endereco: "", observacoes: "", ativo: true },
-  { id: 10, nome: "Eduardo Matos", cpf: "12312312399", telefone: "21982345678", email: "", nascimento: "1956-08-17", cidade: "Rio de Janeiro", endereco: "", observacoes: "", ativo: true },
-];
+import { api } from "./api";
+import { ROTAS } from "../config/apiRoutes";
+import { PESO_MASTER } from "../config/permissoes";
+import { lerSessao } from "./sessao";
 
-let proximoId = 11;
+// API -> tela: a API manda null nos campos vazios, e os campos do formulário precisam de texto
+function doApi(p) {
+  return {
+    id: p.id,
+    nome: p.nome ?? "",
+    cpf: p.cpf ?? "",
+    telefone: p.telefone ?? "",
+    email: p.email ?? "",
+    nascimento: p.nascimento ? String(p.nascimento).slice(0, 10) : "",
+    cidade: p.cidade ?? "",
+    endereco: p.endereco ?? "",
+    observacoes: p.observacoes ?? "",
+    ativo: p.ativo ?? p.inativo === 0,
+  };
+}
+
+// Tela -> API: só os campos que a API aceita; opcionais em branco viram null
+function corpoDe(d) {
+  const opcional = (v) => {
+    const t = String(v ?? "").trim();
+    return t === "" ? null : t;
+  };
+
+  return {
+    nome: d.nome.trim(),
+    cpf: d.cpf,
+    telefone: opcional(d.telefone),
+    email: opcional(d.email),
+    nascimento: d.nascimento,
+    cidade: opcional(d.cidade),
+    endereco: opcional(d.endereco),
+    observacoes: opcional(d.observacoes),
+  };
+}
+
+// O Master precisa informar o grupo nas gravações. Os demais usam o grupo do token.
+// PROVISÓRIO: por enquanto usa o grupo do próprio Master (passo 4b: seletor de grupo).
+function grupoQuery() {
+  const u = lerSessao()?.usuario;
+  return u && u.peso >= PESO_MASTER ? `?idGrupo=${u.idGrupo}` : "";
+}
 
 export async function listarPacientes() {
-  return pacientes.map((p) => ({ ...p }));
+  const lista = await api(ROTAS.pacientes);
+  return lista.map(doApi);
 }
 
 // Se vier com id, edita. Se não vier, cadastra um novo.
 export async function salvarPaciente(dados) {
   if (dados.id) {
-    pacientes = pacientes.map((p) => (p.id === dados.id ? { ...p, ...dados } : p));
-    return { ...pacientes.find((p) => p.id === dados.id) };
+    const resp = await api(`${ROTAS.paciente(dados.id)}${grupoQuery()}`, {
+      method: "PUT",
+      corpo: corpoDe(dados),
+    });
+    return resp?.id ? doApi(resp) : { ...dados };
   }
-  const novo = { ...dados, id: proximoId++, ativo: true };
-  pacientes = [...pacientes, novo];
-  return { ...novo };
+
+  const resp = await api(`${ROTAS.pacientes}${grupoQuery()}`, {
+    method: "POST",
+    corpo: corpoDe(dados),
+  });
+  return doApi(resp);
 }
 
-export async function alterarStatusPaciente(id) {
-  pacientes = pacientes.map((p) => (p.id === id ? { ...p, ativo: !p.ativo } : p));
-  return { ...pacientes.find((p) => p.id === id) };
+// Na API, "excluir" é inativar
+export async function desativarPaciente(id) {
+  await api(`${ROTAS.paciente(id)}${grupoQuery()}`, { method: "DELETE" });
 }
 
-export async function excluirPaciente(id) {
-  pacientes = pacientes.filter((p) => p.id !== id);
+export async function reativarPaciente(id) {
+  await api(`${ROTAS.reativarPaciente(id)}${grupoQuery()}`, { method: "PATCH" });
 }

@@ -59,7 +59,7 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
     return e;
   }
 
-  async function salvar(evento) {
+   async function salvar(evento) {
     evento.preventDefault();
     const e = validar();
     if (Object.keys(e).length > 0) {
@@ -67,9 +67,15 @@ function PacienteModal({ modoInicial, paciente, onFechar, onSalvar }) {
       toast.erro("Corrija os campos destacados.");
       return;
     }
+
     setSalvando(true);
-    await onSalvar({ ...form, nome: form.nome.trim() });
-    setSalvando(false);
+    try {
+      await onSalvar({ ...form, nome: form.nome.trim() });
+    } catch (erro) {
+      toast.erro(erro.message); // ex.: "Já existe um paciente com este CPF."
+    } finally {
+      setSalvando(false);
+    }
   }
 
   // Cancelar a edição: se veio da visualização, volta para ela

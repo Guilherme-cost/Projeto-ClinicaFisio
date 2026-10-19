@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useToast } from "../components/toastContext";
 import {
   LuSearch,
   LuSlidersHorizontal,
   LuEye,
   LuPencil,
   LuPower,
-  LuTrash2,
   LuUserPlus,
   LuX,
   LuUsers,
@@ -18,11 +16,12 @@ import {
 } from "react-icons/lu";
 import Folha from "../components/Folha";
 import PacienteModal from "../components/PacienteModal";
+import { useToast } from "../components/toastContext";
 import {
   listarPacientes,
   salvarPaciente,
-  alterarStatusPaciente,
-  excluirPaciente,
+  desativarPaciente,
+  reativarPaciente,
 } from "../services/pacientesService";
 import { calcularIdade, formatarCpf, formatarTelefone } from "../utils/formatadores";
 import "./Pacientes.css";
@@ -30,11 +29,13 @@ import "./Pacientes.css";
 const FILTROS_VAZIOS = { cidade: "", idadeMin: "", idadeMax: "" };
 const ORDEM_PADRAO = { campo: "nome", direcao: "asc" };
 
+const idadeDe = (p) => (p.nascimento ? calcularIdade(p.nascimento) : null);
+
 function Pacientes() {
+  const toast = useToast();
+
   const [pacientes, setPacientes] = useState([]);
   const [carregando, setCarregando] = useState(true);
-
-  const toast = useToast();
 
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("todos");
@@ -48,11 +49,23 @@ function Pacientes() {
   const [modalPaciente, setModalPaciente] = useState(null);
 
   useEffect(() => {
-    listarPacientes().then((dados) => {
-      setPacientes(dados);
-      setCarregando(false);
-    });
-  }, []);
+    let cancelado = false;
+
+    listarPacientes()
+      .then((dados) => {
+        if (!cancelado) setPacientes(dados);
+      })
+      .catch((erro) => {
+        if (!cancelado) toast.erro(erro.message);
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [toast]);
 
   // ---------- Contadores ----------
   const total = pacientes.length;
@@ -65,13 +78,13 @@ function Pacientes() {
     const termo = busca.trim().toLowerCase();
 
     const filtrada = pacientes.filter((p) => {
-      const idade = calcularIdade(p.nascimento);
+      const idade = idadeDe(p);
 
       if (statusFiltro === "ativo" && !p.ativo) return false;
       if (statusFiltro === "inativo" && p.ativo) return false;
       if (filtros.cidade && p.cidade !== filtros.cidade) return false;
-      if (filtros.idadeMin !== "" && idade < Number(filtros.idadeMin)) return false;
-      if (filtros.idadeMax !== "" && idade > Number(filtros.idadeMax)) return false;
+      if (filtros.idadeMin !== "" && (idade === null || idade < Number(filtros.idadeMin))) return false;
+      if (filtros.idadeMax !== "" && (idade === null || idade > Number(filtros.idadeMax))) return false;
 
       if (termo) {
         const texto = `${p.nome} ${p.telefone} ${p.cpf}`.toLowerCase();
@@ -83,7 +96,7 @@ function Pacientes() {
     const fator = ordem.direcao === "asc" ? 1 : -1;
     return filtrada.sort((a, b) => {
       if (ordem.campo === "idade") {
-        return (calcularIdade(a.nascimento) - calcularIdade(b.nascimento)) * fator;
+        return ((idadeDe(a) ?? -1) - (idadeDe(b) ?? -1)) * fator;
       }
       return a.nome.localeCompare(b.nome, "pt-BR") * fator;
     });
@@ -102,28 +115,37 @@ function Pacientes() {
     );
   }
 
-  async function alternarStatus(id) {
-  const atualizado = await alterarStatusPaciente(id);
-  setPacientes((lista) => lista.map((p) => (p.id === id ? atualizado : p)));
-  toast.sucesso(atualizado.ativo ? "Paciente ativado." : "Paciente desativado.");
-}
+  // Ativo -> desativa (DELETE). Inativo -> reativa (PATCH).
+  async function alternarStatus(paciente) {
+    try {
+      if (paciente.ativo) {
+        if (!window.confirm(`Desativar o paciente ${paciente.nome}?`)) return;
+        await desativarPaciente(paciente.id);
+      } else {
+        await reativarPaciente(paciente.id);
+      }
 
-async function excluir(paciente) {
-  if (window.confirm(`Excluir o paciente ${paciente.nome}?`)) {
-    await excluirPaciente(paciente.id);
-    setPacientes((lista) => lista.filter((p) => p.id !== paciente.id));
-    toast.sucesso("Paciente excluído.");
+      setPacientes((lista) =>
+        lista.map((p) => (p.id === paciente.id ? { ...p, ativo: !paciente.ativo } : p))
+      );
+      toast.sucesso(paciente.ativo ? "Paciente desativado." : "Paciente reativado.");
+    } catch (erro) {
+      toast.erro(erro.message);
+    }
   }
-}
 
-async function salvar(dados) {
-  const salvo = await salvarPaciente(dados);
-  setPacientes((lista) =>
-    dados.id ? lista.map((p) => (p.id === salvo.id ? salvo : p)) : [...lista, salvo]
-  );
-  setModalPaciente(null);
-  toast.sucesso(dados.id ? "Paciente atualizado." : "Paciente cadastrado.");
-}
+  // Erros da API sobem para o modal, que mostra a mensagem e mantém o formulário aberto
+  async function salvar(dados) {
+    const salvo = await salvarPaciente(dados);
+
+    setPacientes((lista) =>
+      dados.id
+        ? lista.map((p) => (p.id === salvo.id ? { ...p, ...salvo } : p))
+        : [...lista, salvo]
+    );
+    setModalPaciente(null);
+    toast.sucesso(dados.id ? "Paciente atualizado." : "Paciente cadastrado.");
+  }
 
   // ---------- Modal de filtros ----------
   function abrirFiltros() {
@@ -261,11 +283,11 @@ async function salvar(dados) {
                 <tr key={p.id} className={p.ativo ? "" : "linha-inativa"}>
                   <td>
                     <strong className="nome">{p.nome}</strong>
-                    <span className="cpf">CPF: {formatarCpf(p.cpf)}</span>
+                    <span className="cpf">CPF: {p.cpf ? formatarCpf(p.cpf) : "—"}</span>
                   </td>
-                  <td>{formatarTelefone(p.telefone)}</td>
-                  <td>{calcularIdade(p.nascimento)} anos</td>
-                  <td>{p.cidade}</td>
+                  <td>{p.telefone ? formatarTelefone(p.telefone) : "—"}</td>
+                  <td>{idadeDe(p) === null ? "—" : `${idadeDe(p)} anos`}</td>
+                  <td>{p.cidade || "—"}</td>
                   <td>
                     <span className={`status ${p.ativo ? "ativo" : "inativo"}`}>
                       <i />
@@ -290,13 +312,10 @@ async function salvar(dados) {
                       </button>
                       <button
                         className="acao desativar"
-                        title={p.ativo ? "Desativar" : "Ativar"}
-                        onClick={() => alternarStatus(p.id)}
+                        title={p.ativo ? "Desativar" : "Reativar"}
+                        onClick={() => alternarStatus(p)}
                       >
                         <LuPower />
-                      </button>
-                      <button className="acao excluir" title="Excluir" onClick={() => excluir(p)}>
-                        <LuTrash2 />
                       </button>
                     </div>
                   </td>
