@@ -1,110 +1,119 @@
 import { useEffect, useState } from "react";
-import { LuPlus, LuCheck } from "react-icons/lu";
+import { LuPlus, LuPencil } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
 import { useToast } from "../../components/toastContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { PESO_MASTER, temPeso } from "../../config/permissoes";
 import {
-  PAGINAS,
   listarGrupos,
-  listarUsuarios,
-  salvarGrupo,
+  listarEmpresas,
+  criarGrupo,
+  renomearGrupo,
   alternarStatusGrupo,
-  usuarioLogado,
-} from "../../services/configService";
+} from "../../services/gruposService";
 
 function AbaGrupos() {
   const toast = useToast();
+  const { usuario } = useAuth();
+  const souMaster = temPeso(usuario, PESO_MASTER);
 
   const [grupos, setGrupos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [empresas, setEmpresas] = useState([]);
   const [selecionadoId, setSelecionadoId] = useState(null);
-  const [permissoes, setPermissoes] = useState([]);
-  const [gerencia, setGerencia] = useState(false);
-  const [modalNovo, setModalNovo] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [modal, setModal] = useState(null); // "novo" | "renomear" | null
 
-  const souMaster = usuarioLogado().master;
-
-  async function carregar() {
-    const [g, u] = await Promise.all([listarGrupos(), listarUsuarios()]);
-    setGrupos(g);
-    setUsuarios(u);
-    return g;
-  }
-
-  function selecionar(grupo) {
-    setSelecionadoId(grupo.id);
-    setPermissoes(grupo.permissoes);
-    setGerencia(grupo.master || !!grupo.gerenciaAvisos);
+  // "manterId": grupo que deve ficar selecionado depois de recarregar (ex.: o recém-criado)
+  async function carregar(manterId) {
+    try {
+      const [g, e] = await Promise.all([
+        listarGrupos(),
+        souMaster ? listarEmpresas() : Promise.resolve([]),
+      ]);
+      setGrupos(g);
+      setEmpresas(e);
+      setSelecionadoId((atual) => {
+        if (manterId) return manterId;
+        return g.some((x) => x.id === atual) ? atual : g[0]?.id ?? null;
+      });
+    } catch (err) {
+      toast.erro(err.message);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => {
-    carregar().then((g) => g.length && selecionar(g[0]));
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const grupo = grupos.find((g) => g.id === selecionadoId);
-  const usuariosDe = (id) => usuarios.filter((u) => u.grupoId === id);
 
-  function alternarPermissao(chave) {
-    setPermissoes((p) => (p.includes(chave) ? p.filter((c) => c !== chave) : [...p, chave]));
+  async function criar(dados) {
+    const novo = await criarGrupo(dados);
+    await carregar(novo.id);
+    setModal(null);
+    toast.sucesso("Grupo criado.");
   }
 
-  const podeEditar = grupo && souMaster && !grupo.master;
-  const gerenciaAtual = grupo ? grupo.master || !!grupo.gerenciaAvisos : false;
-  const alterado =
-    grupo &&
-    ([...permissoes].sort().join() !== [...grupo.permissoes].sort().join() || gerencia !== gerenciaAtual);
-
-  async function salvarPermissoes() {
-    try {
-      await salvarGrupo({ id: grupo.id, nome: grupo.nome, permissoes, gerenciaAvisos: gerencia });
-      await carregar();
-      toast.sucesso("Permissões salvas.");
-    } catch (e) {
-      toast.erro(e.message);
-    }
+  async function renomear(dados) {
+    await renomearGrupo(grupo.id, dados.nome);
+    await carregar(grupo.id);
+    setModal(null);
+    toast.sucesso("Grupo renomeado.");
   }
 
   async function alternarStatus() {
     if (grupo.ativo) {
-      const afetados = usuariosDe(grupo.id).filter((u) => u.ativo).length;
       const ok = window.confirm(
-        `Desativar o grupo "${grupo.nome}"?\n${afetados} usuário(s) ativo(s) deste grupo também serão desativados.`
+        `Desativar o grupo "${grupo.nome}"?\nOs usuários dele deixam de conseguir entrar no sistema. O histórico é mantido.`
       );
       if (!ok) return;
     }
+
     try {
-      await alternarStatusGrupo(grupo.id);
-      await carregar();
-      if (grupo.ativo) toast.aviso("Grupo desativado e usuários do grupo desativados.");
-      else toast.info("Grupo reativado. Os usuários continuam inativos até serem reativados.");
+      await alternarStatusGrupo(grupo);
+      await carregar(grupo.id);
+      if (grupo.ativo) toast.aviso("Grupo desativado. Os usuários dele não conseguem mais entrar.");
+      else toast.sucesso("Grupo reativado.");
     } catch (e) {
       toast.erro(e.message);
     }
   }
 
-  async function criarGrupo(dados) {
-    const novo = await salvarGrupo({ nome: dados.nome, permissoes: [] });
-    await carregar();
-    selecionar(novo);
-    setModalNovo(false);
-    toast.sucesso("Grupo criado.");
-  }
+  const empresasAtivas = empresas
+    .filter((e) => e.ativo)
+    .map((e) => ({ valor: e.id, rotulo: e.nome }));
 
   return (
     <>
       <div className="secao-topo">
         <div>
-          <h2>Grupos de acesso</h2>
-          <p>Todo usuário pertence a um grupo. O grupo define quais telas ele pode ver.</p>
+          <h2>Grupos (filiais)</h2>
+          <p>
+            Cada grupo é uma filial. Usuários, profissionais, procedimentos, agendamentos e a fila
+            pertencem a um grupo.
+          </p>
         </div>
-        <button className="btn-novo" disabled={!souMaster} onClick={() => setModalNovo(true)}>
+        <button
+          className="btn-novo"
+          disabled={!souMaster}
+          title={souMaster ? "" : "Somente Master"}
+          onClick={() => setModal("novo")}
+        >
           <span className="btn-novo-icone"><LuPlus /></span>
           Novo Grupo
         </button>
       </div>
 
       {!souMaster && (
-        <div className="aviso info">Somente um usuário Master pode criar e alterar grupos.</div>
+        <div className="aviso info">
+          Somente um usuário Master pode criar e alterar grupos. Aqui você vê o seu grupo.
+        </div>
       )}
+
+      {carregando && <p className="ag-vazio">Carregando...</p>}
 
       <div className="grupos-layout">
         <div className="lista-grupos">
@@ -112,11 +121,11 @@ function AbaGrupos() {
             <button
               key={g.id}
               className={`grupo-item ${g.id === selecionadoId ? "selecionado" : ""}`}
-              onClick={() => selecionar(g)}
+              onClick={() => setSelecionadoId(g.id)}
             >
               <span>
                 <strong>{g.nome}</strong>
-                <small>{usuariosDe(g.id).length} usuários</small>
+                {souMaster && <small>{g.empresa}</small>}
               </span>
               <span className={`status ${g.ativo ? "ativo" : "inativo"}`}>
                 <i />
@@ -130,80 +139,69 @@ function AbaGrupos() {
           <div className="painel">
             <div className="painel-topo">
               <div>
-                <h3>Permissões · {grupo.nome}</h3>
-                <small>Marque as telas que o grupo pode ver</small>
+                <h3>{grupo.nome}</h3>
+                <small>Dados da filial</small>
               </div>
-              {souMaster && !grupo.master && (
-                <button className={`btn-perigo ${grupo.ativo ? "" : "reativar"}`} onClick={alternarStatus}>
-                  {grupo.ativo ? "Desativar grupo" : "Reativar grupo"}
-                </button>
+
+              {souMaster && (
+                <div className="acoes">
+                  <button className="acao editar" title="Renomear" onClick={() => setModal("renomear")}>
+                    <LuPencil />
+                  </button>
+                  <button className={`btn-perigo ${grupo.ativo ? "" : "reativar"}`} onClick={alternarStatus}>
+                    {grupo.ativo ? "Desativar grupo" : "Reativar grupo"}
+                  </button>
+                </div>
               )}
             </div>
 
-            <div className="lista-permissoes">
-              {PAGINAS.map((p) => {
-                const marcado = permissoes.includes(p.chave);
-                return (
-                  <label key={p.chave} className="perm-linha">
-                    <input
-                      type="checkbox"
-                      checked={marcado}
-                      disabled={!podeEditar}
-                      onChange={() => alternarPermissao(p.chave)}
-                    />
-                    <span className="perm-caixa">{marcado && <LuCheck />}</span>
-                    <span className="perm-nome">{p.nome}</span>
-                    <span className={`perm-estado ${marcado ? "sim" : "nao"}`}>
-                      {marcado ? "Pode ver" : "Sem acesso"}
-                    </span>
-                  </label>
-                );
-              })}
+            <dl className="grupo-dados">
+              <div>
+                <dt>Empresa</dt>
+                <dd>{grupo.empresa}</dd>
+              </div>
+              <div>
+                <dt>Situação</dt>
+                <dd>
+                  <span className={`status ${grupo.ativo ? "ativo" : "inativo"}`}>
+                    <i />
+                    {grupo.ativo ? "Ativo" : "Inativo"}
+                  </span>
+                </dd>
+              </div>
+            </dl>
 
-              {/* Permissão especial: criar e gerenciar avisos */}
-              <label className="perm-linha">
-                <input
-                  type="checkbox"
-                  checked={gerencia}
-                  disabled={!podeEditar}
-                  onChange={() => setGerencia((g) => !g)}
-                />
-                <span className="perm-caixa">{gerencia && <LuCheck />}</span>
-                <span className="perm-nome">Pode criar e gerenciar avisos</span>
-                <span className={`perm-estado ${gerencia ? "sim" : "nao"}`}>
-                  {gerencia ? "Sim" : "Não"}
-                </span>
-              </label>
+            <div className="aviso alerta">
+              Ao desativar um grupo, <b>os usuários dele não conseguem mais entrar</b> no sistema e
+              saem das listas de operação. O histórico (agendamentos, fila) é mantido. Reativar o
+              grupo libera o acesso de novo.
             </div>
-
-            {grupo.master ? (
-              <div className="aviso info">
-                O grupo Master sempre acessa todas as telas, gerencia avisos e não pode ser desativado.
-              </div>
-            ) : (
-              <div className="aviso alerta">
-                Ao desativar um grupo, <b>todos os usuários dele são desativados</b> automaticamente.
-              </div>
-            )}
-
-            {podeEditar && (
-              <div className="rodape-painel">
-                <button className="btn-primario btn-salvar" disabled={!alterado} onClick={salvarPermissoes}>
-                  Salvar permissões
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      {modalNovo && (
+      {modal === "novo" && (
         <FormModal
           titulo="Novo grupo"
-          subtitulo="As permissões são definidas depois de criar"
-          campos={[{ chave: "nome", rotulo: "Nome do grupo", obrigatorio: true, placeholder: "Ex: Financeiro" }]}
-          onSalvar={criarGrupo}
-          onFechar={() => setModalNovo(false)}
+          subtitulo="Escolha a empresa. Ela não pode ser trocada depois."
+          campos={[
+            { chave: "idEmpresa", rotulo: "Empresa", tipo: "select", opcoes: empresasAtivas, obrigatorio: true },
+            { chave: "nome", rotulo: "Nome do grupo", obrigatorio: true, placeholder: "Ex: Filial Centro" },
+          ]}
+          onSalvar={criar}
+          onFechar={() => setModal(null)}
+        />
+      )}
+
+      {modal === "renomear" && grupo && (
+        <FormModal
+          key={`renomear-${grupo.id}`}
+          titulo="Renomear grupo"
+          subtitulo={grupo.empresa}
+          campos={[{ chave: "nome", rotulo: "Nome do grupo", obrigatorio: true }]}
+          inicial={grupo}
+          onSalvar={renomear}
+          onFechar={() => setModal(null)}
         />
       )}
     </>

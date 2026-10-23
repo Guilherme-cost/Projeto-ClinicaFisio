@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "react";
-import { listarPacientes } from "./pacientesService";
-import { podeGerenciarAvisos, podeVer, usuarioLogado } from "./configService";
-import { HOJE, inicioDaSemana, paraISO, somarDias } from "../utils/datas";
+import { api } from "./api";
+import { ROTAS } from "../config/apiRoutes";
+import { podeVerTela } from "../config/permissoes";
+import { sufixoGrupo } from "./escopo";
+import { lerSessao } from "./sessao";
 
 export const TIPOS = {
   diretoria: "Diretoria",
@@ -16,99 +18,44 @@ export const NIVEIS = {
   urgente: "Urgente",
 };
 
-const PESO_NIVEL = { urgente: 0, importante: 1, informativo: 2 };
+const soData = (d) => (d ? String(d).slice(0, 10) : "");
 
-const em = (dias) => paraISO(somarDias(HOJE, dias));
-const hojeISO = () => paraISO(HOJE);
-
-// ---------- Dados de exemplo ----------
-let avisos = [
-  {
-    id: 1, tipo: "sistema", nivel: "urgente", titulo: "Manutenção programada",
-    mensagem: "O FisioCore ficará indisponível no sábado, das 22h às 23h, para uma atualização. Finalize os registros antes.",
-    autor: "Sistema", perfil: "automático", automatico: true, criadoEm: em(-1), validade: em(6), ativo: true,
-  },
-  {
-    id: 2, tipo: "diretoria", nivel: "importante", titulo: "Reunião geral da equipe",
-    mensagem: "Toda a equipe: reunião na sexta-feira, às 12h, na sala de treinamento. Presença obrigatória.",
-    autor: "Admin Master", perfil: "Master", automatico: false, criadoEm: em(-2), validade: em(5), ativo: true,
-  },
-  {
-    id: 3, tipo: "comunicado", nivel: "importante", titulo: "Novo protocolo de higienização",
-    mensagem: "A partir de segunda, siga o novo protocolo de higienização das macas entre um atendimento e outro.",
-    autor: "Paulo Reis", perfil: "Supervisores", automatico: false, criadoEm: em(-3), validade: em(13), ativo: true,
-  },
-  {
-    id: 4, tipo: "diretoria", nivel: "informativo", titulo: "Parabéns pela meta do trimestre",
-    mensagem: "A clínica bateu a meta de atendimentos do trimestre. Obrigado a toda a equipe pelo empenho.",
-    autor: "Admin Master", perfil: "Master", automatico: false, criadoEm: em(-5), validade: em(12), ativo: true,
-  },
-  {
-    id: 5, tipo: "comunicado", nivel: "importante", titulo: "Campanha de vacinação",
-    mensagem: "A campanha de vacinação interna estava disponível na recepção até o fim da semana passada.",
-    autor: "Paulo Reis", perfil: "Supervisores", automatico: false, criadoEm: em(-20), validade: em(-8), ativo: true,
-  },
-];
-
-let proximoId = 6;
-const lidos = {}; // { [idDoUsuario]: Set com ids de avisos lidos }
-
-// ---------- Regras ----------
-// ativo = dentro da validade e não desativado | vencido = passou da validade | desativado = desligado à mão
-export function statusDe(aviso) {
-  if (!aviso.ativo) return "desativado";
-  if (aviso.validade < hojeISO()) return "vencido";
-  return "ativo";
-}
-
-function exigirGerencia(acao) {
-  if (!podeGerenciarAvisos()) {
-    throw new Error(`Somente Master ou um grupo com permissão de avisos pode ${acao}.`);
-  }
-}
-
-function validar({ titulo, mensagem, tipo, nivel, validade }) {
-  if (!titulo || titulo.trim().length < 3) throw new Error("Informe o título do aviso.");
-  if (!mensagem || mensagem.trim().length < 3) throw new Error("Escreva a mensagem do aviso.");
-  if (!["diretoria", "comunicado"].includes(tipo)) throw new Error("Selecione o tipo do aviso.");
-  if (!NIVEIS[nivel]) throw new Error("Selecione a importância.");
-  if (!validade) throw new Error("Informe até quando o aviso é válido.");
-  if (validade < hojeISO()) throw new Error("A validade não pode ser uma data passada.");
-}
-
-const lidosDoUsuario = () => (lidos[usuarioLogado().id] ??= new Set());
-
-// Aviso automático: aniversariantes da semana (só o primeiro nome)
-async function avisoAniversariantes() {
-  const pacientes = (await listarPacientes()).filter((p) => p.ativo);
-  const inicio = inicioDaSemana(HOJE);
-  const nomes = [];
-
-  for (let i = 0; i < 7; i++) {
-    const dia = somarDias(inicio, i);
-    pacientes.forEach((p) => {
-      const [, mes, d] = p.nascimento.split("-").map(Number);
-      if (mes === dia.getMonth() + 1 && d === dia.getDate()) {
-        nomes.push(`${p.nome.split(" ")[0]} (${String(d).padStart(2, "0")}/${String(mes).padStart(2, "0")})`);
-      }
-    });
-  }
-  if (nomes.length === 0) return null;
-
+// API -> tela. O aviso de aniversariantes vem com id 0: usamos a chave como id,
+// assim a tela tem um identificador único e marcarLido(id) funciona igual para todos.
+function doApi(a) {
   return {
-    id: `aniv-${paraISO(inicio)}`,
-    tipo: "aniversariantes",
-    nivel: "informativo",
-    titulo: "Aniversariantes da semana",
-    mensagem: `${nomes.join(", ")}. Que tal parabenizar?`,
-    autor: "Sistema",
-    perfil: "automático",
-    automatico: true,
-    criadoEm: paraISO(inicio),
-    validade: paraISO(somarDias(inicio, 6)),
-    ativo: true,
+    id: a.id === 0 ? a.chave : a.id,
+    chave: a.chave,
+    tipo: a.tipo,
+    nivel: a.nivel,
+    titulo: a.titulo,
+    mensagem: a.mensagem,
+    autor: a.autor,
+    perfil: a.perfil,
+    automatico: a.automatico,
+    criadoEm: soData(a.criadoEm),
+    validade: soData(a.validade),
+    ativo: a.ativo,
+    status: a.status, // ativo | vencido | desativado (calculado pela API)
+    lido: a.lido,
+    todasFiliais: a.todasFiliais,
   };
 }
+
+// Tela -> API. Validade vazia vai como null (nunca ""), a API responde com a mensagem certa.
+function corpoDe(d) {
+  return {
+    tipo: d.tipo,
+    nivel: d.nivel,
+    titulo: (d.titulo ?? "").trim(),
+    mensagem: (d.mensagem ?? "").trim(),
+    validade: d.validade || null,
+  };
+}
+
+// Criar exige grupo: o Master precisa ter escolhido um no seletor do topo.
+// Os demais usam o grupo do token (a API ignora o idGrupo deles).
+const grupoQuery = () => sufixoGrupo({ obrigatorio: true });
 
 // ---------- Contador de não lidos (usado pelo menu lateral) ----------
 const ouvintes = new Set();
@@ -125,10 +72,16 @@ export function useNaoLidos() {
 
 export async function recalcularNaoLidos() {
   let novo = 0;
-  if (podeVer("/avisos")) {
-    const lista = await listarAvisos();
-    novo = lista.filter((a) => a.status === "ativo" && !a.lido).length;
+
+  if (podeVerTela(lerSessao()?.usuario, "/avisos")) {
+    try {
+      const r = await api(`${ROTAS.avisosNaoLidos}${sufixoGrupo()}`);
+      novo = r?.quantidade ?? 0;
+    } catch {
+      return; // o menu não deve quebrar nem mostrar erro: mantém o último valor
+    }
   }
+
   if (novo !== naoLidos) {
     naoLidos = novo;
     ouvintes.forEach((f) => f());
@@ -136,87 +89,43 @@ export async function recalcularNaoLidos() {
 }
 
 // ---------- Funções usadas pelas telas ----------
-// Operadores só recebem avisos ativos. Quem gerencia recebe todos.
+// Operadores só recebem avisos ativos. Quem gerencia recebe todos. Quem filtra é a API.
+// Master: segue o grupo escolhido no topo ("Todos os grupos" mostra tudo).
 export async function listarAvisos() {
-  const gerencia = podeGerenciarAvisos();
-  const aniversariantes = await avisoAniversariantes();
-  const meusLidos = lidosDoUsuario();
-
-  return [...avisos, ...(aniversariantes ? [aniversariantes] : [])]
-    .map((a) => ({ ...a, status: statusDe(a), lido: meusLidos.has(a.id) }))
-    .filter((a) => gerencia || a.status === "ativo")
-    .sort((a, b) => {
-      const ativoA = a.status === "ativo" ? 0 : 1;
-      const ativoB = b.status === "ativo" ? 0 : 1;
-      if (ativoA !== ativoB) return ativoA - ativoB;
-      if (PESO_NIVEL[a.nivel] !== PESO_NIVEL[b.nivel]) return PESO_NIVEL[a.nivel] - PESO_NIVEL[b.nivel];
-      return b.criadoEm.localeCompare(a.criadoEm);
-    });
+  const lista = await api(`${ROTAS.avisos}${sufixoGrupo()}`);
+  return lista.map(doApi);
 }
 
 export async function criarAviso(dados) {
-  exigirGerencia("criar avisos");
-  validar(dados);
-
-  const u = usuarioLogado();
-  avisos = [
-    ...avisos,
-    {
-      id: proximoId++,
-      tipo: dados.tipo,
-      nivel: dados.nivel,
-      titulo: dados.titulo.trim(),
-      mensagem: dados.mensagem.trim(),
-      autor: u.nome,
-      perfil: u.master ? "Master" : u.grupo.nome,
-      automatico: false,
-      criadoEm: hojeISO(),
-      validade: dados.validade,
-      ativo: true,
-    },
-  ];
+  await api(`${ROTAS.avisos}${grupoQuery()}`, { method: "POST", corpo: corpoDe(dados) });
   await recalcularNaoLidos();
 }
 
+// Editar, desativar e reativar não mandam idGrupo: o aviso é localizado pelo id
+// entre os que o usuário já enxerga.
 export async function editarAviso(dados) {
-  exigirGerencia("editar avisos");
-  validar(dados);
-
-  const atual = avisos.find((a) => a.id === dados.id);
-  if (!atual || atual.automatico) throw new Error("Este aviso não pode ser editado.");
-
-  avisos = avisos.map((a) =>
-    a.id === dados.id
-      ? { ...a, tipo: dados.tipo, nivel: dados.nivel, titulo: dados.titulo.trim(), mensagem: dados.mensagem.trim(), validade: dados.validade }
-      : a
-  );
+  await api(ROTAS.aviso(dados.id), { method: "PUT", corpo: corpoDe(dados) });
   await recalcularNaoLidos();
 }
 
+// Na API, "desativar" não apaga
 export async function desativarAviso(id) {
-  exigirGerencia("desativar avisos");
-  avisos = avisos.map((a) => (a.id === id ? { ...a, ativo: false } : a));
+  await api(ROTAS.aviso(id), { method: "DELETE" });
   await recalcularNaoLidos();
 }
 
-// Reativar exige uma nova validade, senão o aviso venceria de novo na hora
+// Reativar exige uma nova validade
 export async function reativarAviso(id, validade) {
-  exigirGerencia("reativar avisos");
-  if (!validade) throw new Error("Informe a nova validade.");
-  if (validade < hojeISO()) throw new Error("A nova validade não pode ser uma data passada.");
-
-  avisos = avisos.map((a) => (a.id === id ? { ...a, ativo: true, validade } : a));
+  await api(ROTAS.reativarAviso(id), { method: "PATCH", corpo: { validade: validade || null } });
   await recalcularNaoLidos();
 }
 
 export async function marcarLido(id) {
-  lidosDoUsuario().add(id);
+  await api(`${ROTAS.avisoLido(String(id))}${sufixoGrupo()}`, { method: "POST" });
   await recalcularNaoLidos();
 }
 
 export async function marcarTodosLidos() {
-  const lista = await listarAvisos();
-  const meus = lidosDoUsuario();
-  lista.filter((a) => a.status === "ativo").forEach((a) => meus.add(a.id));
+  await api(`${ROTAS.avisosLidos}${sufixoGrupo()}`, { method: "POST" });
   await recalcularNaoLidos();
 }

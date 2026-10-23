@@ -1,45 +1,68 @@
 import { useEffect, useState } from "react";
-import { useToast } from "../../components/toastContext";
 import { LuPencil, LuPower, LuPlus } from "react-icons/lu";
 import FormModal from "../../components/FormModal";
-import { listarCadastro, salvarCadastro, alternarStatusCadastro } from "../../services/configService";
+import { useToast } from "../../components/toastContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { PESO_MINIMO, temPeso } from "../../config/permissoes";
+import {
+  listarCadastro,
+  salvarCadastro,
+  alternarStatusCadastro,
+} from "../../services/cadastrosService";
 import { CADASTROS } from "./cadastrosConfig";
 
 function AbaCadastro({ entidade }) {
   const cfg = CADASTROS[entidade];
+  const toast = useToast();
+  const { usuario } = useAuth();
 
   const [itens, setItens] = useState([]);
-  const toast = useToast();
   const [especialidades, setEspecialidades] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modal, setModal] = useState(null); // { item } ou null
 
+  // Criar e editar especialidade exige um peso mínimo (a API é quem bloqueia de verdade)
+  const restrito =
+    entidade === "especialidades" && !temPeso(usuario, PESO_MINIMO.criarEspecialidade);
+  const dicaRestrito = "Seu perfil não pode criar ou editar especialidades.";
+
   async function carregar() {
-    const [lista, esp] = await Promise.all([
-      listarCadastro(entidade),
-      listarCadastro("especialidades"),
-    ]);
-    setItens(lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
-    setEspecialidades(esp);
-    setCarregando(false);
+    try {
+      const [lista, esp] = await Promise.all([
+        listarCadastro(entidade),
+        listarCadastro("especialidades"),
+      ]);
+      setItens(lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
+      setEspecialidades(esp);
+    } catch (e) {
+      toast.erro(e.message);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => {
+    setCarregando(true);
     carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entidade]);
 
   async function salvar(dados) {
-  await salvarCadastro(entidade, dados);
-  await carregar();
-  setModal(null);
-  toast.sucesso("Cadastro salvo.");
-}
+    await salvarCadastro(entidade, dados);
+    await carregar();
+    setModal(null);
+    toast.sucesso("Cadastro salvo.");
+  }
 
-async function alternarStatus(id) {
-  await alternarStatusCadastro(entidade, id);
-  await carregar();
-  toast.sucesso("Status atualizado.");
-}
+  async function alternarStatus(item) {
+    try {
+      await alternarStatusCadastro(entidade, item);
+      await carregar();
+      toast.sucesso(item.ativo ? "Cadastro desativado." : "Cadastro reativado.");
+    } catch (e) {
+      toast.erro(e.message);
+    }
+  }
 
   const colunas = cfg.colunas(especialidades);
 
@@ -50,7 +73,12 @@ async function alternarStatus(id) {
           <h2>{cfg.titulo}</h2>
           <p>{cfg.subtitulo}</p>
         </div>
-        <button className="btn-novo" onClick={() => setModal({ item: null })}>
+        <button
+          className="btn-novo"
+          disabled={restrito}
+          title={restrito ? dicaRestrito : ""}
+          onClick={() => setModal({ item: null })}
+        >
           <span className="btn-novo-icone"><LuPlus /></span>
           {cfg.novo}
         </button>
@@ -88,13 +116,18 @@ async function alternarStatus(id) {
                 </td>
                 <td className="col-acoes">
                   <div className="acoes">
-                    <button className="acao editar" title="Editar" onClick={() => setModal({ item })}>
+                    <button
+                      className="acao editar"
+                      title={restrito ? dicaRestrito : "Editar"}
+                      disabled={restrito}
+                      onClick={() => setModal({ item })}
+                    >
                       <LuPencil />
                     </button>
                     <button
                       className="acao desativar"
                       title={item.ativo ? "Desativar" : "Ativar"}
-                      onClick={() => alternarStatus(item.id)}
+                      onClick={() => alternarStatus(item)}
                     >
                       <LuPower />
                     </button>

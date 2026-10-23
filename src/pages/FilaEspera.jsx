@@ -13,20 +13,21 @@ import {
   LuArrowDown,
 } from "react-icons/lu";
 import Folha from "../components/Folha";
+import AgendarFilaModal from "../components/AgendarFilaModal";
+import { useAuth } from "../contexts/AuthContext";
+import { PESO_MINIMO, temPeso } from "../config/permissoes";
 import FormModal from "../components/FormModal";
-import AgendamentoModal from "../components/AgendamentoModal";
 import { useToast } from "../components/toastContext";
 import { listarPacientes } from "../services/pacientesService";
-import { listarCadastro, usuarioLogado } from "../services/configService";
-import { salvarAgendamento } from "../services/agendamentosService";
 import {
   PESO,
   PRIORIDADES,
   adicionarNaFila,
+  agendarDaFila,
   atualizarFila,
-  concluirFila,
   criarSecao,
   diasDeEspera,
+  listarEspecialidades,
   listarFila,
   removerDaFila,
 } from "../services/filaService";
@@ -58,11 +59,14 @@ function Prioridade({ valor }) {
 
 function FilaEspera() {
   const toast = useToast();
-  const souMaster = usuarioLogado().master;
+  const { usuario } = useAuth();
+  const podeRetirar = temPeso(usuario, PESO_MINIMO.retirarDaFila);
+  const podeCriarSecao = temPeso(usuario, PESO_MINIMO.criarEspecialidade);
 
   const [itens, setItens] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
-  const [catalogo, setCatalogo] = useState({ pacientes: [], procedimentos: [], professores: [] });
+  const [catalogo, setCatalogo] = useState({ pacientes: [] });
+  
   const [carregando, setCarregando] = useState(true);
 
   const [busca, setBusca] = useState("");
@@ -77,18 +81,22 @@ function FilaEspera() {
   const [editando, setEditando] = useState(null);
   const [agendando, setAgendando] = useState(null);
 
-  const carregar = useCallback(async () => {
-    const [fila, esp, pacientes, procedimentos, professores] = await Promise.all([
-      listarFila(),
-      listarCadastro("especialidades"),
-      listarPacientes(),
-      listarCadastro("procedimentos"),
-      listarCadastro("professores"),
-    ]);
-    setItens(fila);
-    setEspecialidades(esp);
-    setCatalogo({ pacientes, procedimentos, professores });
-    setCarregando(false);
+    const carregar = useCallback(async () => {
+    try {
+      const [fila, esp, pacientes] = await Promise.all([
+        listarFila(),
+        listarEspecialidades(),
+        listarPacientes(),
+      ]);
+      setItens(fila);
+      setEspecialidades(esp);
+      setCatalogo({ pacientes });
+    } catch (e) {
+      toast.erro(e.message);
+    } finally {
+      setCarregando(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -119,8 +127,7 @@ function FilaEspera() {
       .map((i) => ({
         ...i,
         dias: diasDeEspera(i.entrada),
-        paciente: catalogo.pacientes.find((p) => p.id === i.pacienteId),
-      }))
+        paciente: { nome: i.nome, telefone: i.telefone },      }))
       .filter((i) => {
         if (filtros.especialidadeId !== "" && i.especialidadeId !== filtros.especialidadeId) return false;
         if (filtros.prioridades.length > 0 && !filtros.prioridades.includes(i.prioridade)) return false;
@@ -140,7 +147,7 @@ function FilaEspera() {
         const r = typeof ka === "string" ? ka.localeCompare(kb, "pt-BR") : ka - kb;
         return r !== 0 ? r * fator : b.dias - a.dias; // empate: quem espera há mais tempo primeiro
       });
-  }, [itens, catalogo.pacientes, filtros, termo, ordem]);
+  }, [itens, filtros, termo, ordem]);
 
   // ---------- Seções (uma por especialidade ativa) ----------
   const secoes = especialidades
@@ -175,15 +182,15 @@ function FilaEspera() {
     toast.sucesso("Paciente adicionado à fila.");
   }
 
-  async function editar(dados) {
-    await atualizarFila(dados);
+    async function editar(dados) {
+    await atualizarFila({ ...editando, prioridade: dados.prioridade, observacao: dados.observacao });
     await carregar();
     setEditando(null);
     toast.sucesso("Fila atualizada.");
   }
 
   async function remover(item) {
-    const nome = item.paciente?.nome ?? "o paciente";
+    const nome = item.paciente?.nome || "o paciente";
     if (!window.confirm(`Remover ${nome} da fila de espera?`)) return;
     try {
       await removerDaFila(item.id);
@@ -195,8 +202,7 @@ function FilaEspera() {
   }
 
   async function agendar(dados) {
-    await salvarAgendamento(dados);
-    await concluirFila(agendando.id);
+    await agendarDaFila(agendando.id, dados);
     await carregar();
     setAgendando(null);
     toast.sucesso("Agendamento criado. Paciente removido da fila.");
@@ -289,8 +295,8 @@ function FilaEspera() {
 
         <button
           className="btn-secundario-barra"
-          disabled={!souMaster}
-          title={souMaster ? "Criar uma nova seção" : "Somente Master pode criar seções"}
+          disabled={!podeCriarSecao}
+          title={podeCriarSecao ? "Criar uma nova seção" : "Seu perfil não pode criar seções"}
           onClick={() => setModalSecao(true)}
         >
           <span className="ic"><LuPlus /></span>
@@ -377,8 +383,8 @@ function FilaEspera() {
                               </button>
                               <button
                                 className="acao excluir"
-                                title={souMaster ? "Remover da fila" : "Somente Master pode remover"}
-                                disabled={!souMaster}
+                                title={podeRetirar ? "Remover da fila" : "Seu perfil não pode remover da fila"}
+                                disabled={!podeRetirar}
                                 onClick={() => remover(i)}
                               >
                                 <LuTrash2 />
@@ -439,14 +445,12 @@ function FilaEspera() {
         />
       )}
 
-      {/* ---------- Agendar (paciente já preenchido) ---------- */}
+      {/* ---------- Agendar pela fila ---------- */}
       {agendando && (
-        <AgendamentoModal
+        <AgendarFilaModal
           key={`fila-${agendando.id}`}
-          agendamento={null}
-          preenchido={{ pacienteId: agendando.pacienteId }}
+          item={agendando}
           dataInicial={proximoDiaUtil()}
-          catalogo={catalogo}
           onSalvar={agendar}
           onFechar={() => setAgendando(null)}
         />

@@ -3,7 +3,8 @@ import { LuPlus, LuPencil, LuPower } from "react-icons/lu";
 import Folha from "../components/Folha";
 import FormModal from "../components/FormModal";
 import { useToast } from "../components/toastContext";
-import { podeGerenciarAvisos } from "../services/configService";
+import { useAuth } from "../contexts/AuthContext";
+import { PESO_MASTER, PESO_MINIMO, temPeso } from "../config/permissoes";
 import {
   NIVEIS,
   TIPOS,
@@ -48,7 +49,9 @@ const CAMPOS_AVISO = [
 
 function Avisos() {
   const toast = useToast();
-  const gerencia = podeGerenciarAvisos();
+  const { usuario } = useAuth();
+  const gerencia = temPeso(usuario, PESO_MINIMO.gerenciarAvisos);
+  const master = temPeso(usuario, PESO_MASTER);
 
   const [avisos, setAvisos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -57,9 +60,15 @@ function Avisos() {
   const [soNaoLidos, setSoNaoLidos] = useState(false);
   const [modal, setModal] = useState(null); // { modo: "novo" | "editar" | "reativar", aviso }
 
-  const carregar = useCallback(async () => {
-    setAvisos(await listarAvisos());
-    setCarregando(false);
+    const carregar = useCallback(async () => {
+    try {
+      setAvisos(await listarAvisos());
+    } catch (e) {
+      toast.erro(e.message);
+    } finally {
+      setCarregando(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -80,16 +89,24 @@ function Avisos() {
   });
 
   // ---------- Ações ----------
-  async function abrir(aviso) {
+    async function abrir(aviso) {
     if (!naoLido(aviso)) return;
-    await marcarLido(aviso.id);
-    await carregar();
+    try {
+      await marcarLido(aviso.id);
+      await carregar();
+    } catch (e) {
+      toast.erro(e.message);
+    }
   }
 
   async function lerTodos() {
-    await marcarTodosLidos();
-    await carregar();
-    toast.sucesso("Todos os avisos foram marcados como lidos.");
+    try {
+      await marcarTodosLidos();
+      await carregar();
+      toast.sucesso("Todos os avisos foram marcados como lidos.");
+    } catch (e) {
+      toast.erro(e.message);
+    }
   }
 
   async function salvarNovo(dados) {
@@ -199,8 +216,8 @@ function Avisos() {
       <div className="av-grade">
         {visiveis.map((a) => {
           const inativo = a.status !== "ativo";
-          const editavel = gerencia && !a.automatico;
-
+          // Automático não se altera; aviso de todas as filiais só o Master altera
+          const editavel = gerencia && !a.automatico && (!a.todasFiliais || master);
           return (
             <article
               key={a.id}
@@ -240,7 +257,7 @@ function Avisos() {
                       <span className="status inativo"><i />Inativo</span>
                     )}
 
-                    {inativo && !a.automatico && (
+                    {inativo && editavel && (
                       <button
                         className="av-reativar"
                         onClick={() => setModal({ modo: "reativar", aviso: a })}

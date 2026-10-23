@@ -3,43 +3,47 @@ import { LuChevronLeft, LuChevronRight, LuPlus } from "react-icons/lu";
 import Folha from "../components/Folha";
 import AgendamentoModal from "../components/AgendamentoModal";
 import { useToast } from "../components/toastContext";
-import { listarAgendamentos, salvarAgendamento, STATUS } from "../services/agendamentosService";
-import { listarPacientes } from "../services/pacientesService";
-import { listarCadastro } from "../services/configService";
+import {
+  listarAgendamentos,
+  listarProfissionais,
+  salvarAgendamento,
+  STATUS,
+} from "../services/agendamentosService";
 import { DIAS, HOJE, inicioDaSemana, paraISO, rotuloSemana, somarDias } from "../utils/datas";
 import "./Pacientes.css";
 import "./Agendamentos.css";
 
-const nomeDe = (lista, id) => lista.find((i) => i.id === id)?.nome ?? "—";
-const primeiroNome = (nome) => nome.split(" ")[0];
+const primeiroNome = (nome) => (nome ? nome.split(" ")[0] : "—");
 
 function Agendamentos() {
   const toast = useToast();
 
   const [inicio, setInicio] = useState(() => inicioDaSemana(HOJE));
   const [lista, setLista] = useState([]);
-  const [catalogo, setCatalogo] = useState({ pacientes: [], procedimentos: [], professores: [] });
+  const [profissionais, setProfissionais] = useState([]);
   const [filtroProf, setFiltroProf] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [modal, setModal] = useState(null); // { agendamento, data } ou null
 
   const carregar = useCallback(async () => {
-    const dados = await listarAgendamentos(paraISO(inicio), paraISO(somarDias(inicio, 6)));
-    setLista(dados);
+    try {
+      setLista(await listarAgendamentos(paraISO(inicio), paraISO(somarDias(inicio, 6))));
+    } catch (e) {
+      toast.erro(e.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inicio]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
+  // Lista de profissionais para o filtro
   useEffect(() => {
-    Promise.all([
-      listarPacientes(),
-      listarCadastro("procedimentos"),
-      listarCadastro("professores"),
-    ]).then(([pacientes, procedimentos, professores]) =>
-      setCatalogo({ pacientes, procedimentos, professores })
-    );
+    listarProfissionais()
+      .then(setProfissionais)
+      .catch((e) => toast.erro(e.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hojeISO = paraISO(HOJE);
@@ -107,7 +111,7 @@ function Agendamentos() {
           Profissional
           <select value={filtroProf} onChange={(e) => setFiltroProf(e.target.value)}>
             <option value="">Todos</option>
-            {catalogo.professores.map((p) => (
+            {profissionais.map((p) => (
               <option key={p.id} value={p.id}>{p.nome}</option>
             ))}
           </select>
@@ -158,10 +162,9 @@ function Agendamentos() {
                       {a.id === proximoId ? "Próximo" : STATUS[a.status]}
                     </span>
                   </span>
-                  <span className="ag-paciente">{nomeDe(catalogo.pacientes, a.pacienteId)}</span>
+                  <span className="ag-paciente">{a.paciente || "—"}</span>
                   <span className="ag-detalhe">
-                    {nomeDe(catalogo.procedimentos, a.procedimentoId)} ·{" "}
-                    {primeiroNome(nomeDe(catalogo.professores, a.professorId))}
+                    {a.procedimento || "—"} · {primeiroNome(a.profissional)}
                   </span>
                 </button>
               ))}
@@ -179,7 +182,6 @@ function Agendamentos() {
           key={modal.agendamento?.id ?? `novo-${modal.data}`}
           agendamento={modal.agendamento}
           dataInicial={modal.data}
-          catalogo={catalogo}
           onSalvar={salvar}
           onFechar={() => setModal(null)}
         />

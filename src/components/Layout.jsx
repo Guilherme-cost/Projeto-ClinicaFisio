@@ -13,7 +13,9 @@ import {
 import { podeVerTela } from "../config/permissoes";
 import { useAuth } from "../contexts/AuthContext";
 import { recalcularNaoLidos, useNaoLidos } from "../services/avisosService";
+import { useEscopo } from "../services/escopo";
 import AcessoNegado from "./AcessoNegado";
+import SeletorEscopo from "./SeletorEscopo";
 import "./Layout.css";
 
 const menuPrincipal = [
@@ -36,10 +38,12 @@ function Layout() {
   const { usuario, sair } = useAuth();
   const { pathname } = useLocation();
   const naoLidos = useNaoLidos();
+  const escopo = useEscopo(); // grupo escolhido pelo Master (null = todos)
 
+  // Recalcula o contador do menu ao entrar e sempre que o Master troca de grupo
   useEffect(() => {
     recalcularNaoLidos();
-  }, []);
+  }, [escopo.idGrupo]);
 
   if (!usuario) return null; // a PrivateRoute já redireciona para o login
 
@@ -78,6 +82,7 @@ function Layout() {
         </div>
 
         <div className="topbar-usuario">
+          <SeletorEscopo />
           <span>
             Empresa: <strong>{maiusculo(usuario.empresa)}</strong>
           </span>
@@ -117,7 +122,12 @@ function Layout() {
 
       <div className="conteudo">
         <main className="area-pagina">
-          {podeVerTela(usuario, pathname) ? <Outlet /> : <AcessoNegado />}
+          {podeVerTela(usuario, pathname) ? (
+            // A key faz a tela remontar (e recarregar os dados) quando o Master troca de grupo
+            <Outlet key={escopo.idGrupo ?? "todos"} />
+          ) : (
+            <AcessoNegado />
+          )}
         </main>
       </div>
     </div>

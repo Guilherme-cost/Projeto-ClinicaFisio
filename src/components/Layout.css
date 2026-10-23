@@ -55,6 +55,37 @@
   color: #12263a;
 }
 
+/* ---------- Seletor de grupo (só o Master vê) ---------- */
+.seletor-escopo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #3f4f5f;
+}
+
+.seletor-escopo select {
+  max-width: 220px;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #12263a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.seletor-escopo select:hover {
+  border-color: #2f80c4;
+}
+
+.seletor-escopo select:focus {
+  outline: 2px solid rgba(47, 128, 196, 0.35);
+  border-color: #2f80c4;
+}
+
 .separador {
   width: 2px;
   height: 18px;
@@ -167,6 +198,7 @@
 
 /* ---------- Itens do menu ---------- */
 .menu-item {
+  position: relative;
   display: flex;
   align-items: center;
   height: 40px;
@@ -187,6 +219,7 @@
 }
 
 .menu-item .texto {
+  flex: 1;
   font-size: 15px;
   font-weight: 600;
   opacity: 0;
@@ -232,7 +265,7 @@
 }
 
 .area-pagina {
-   padding: 24px 32px 32px;
+  padding: 24px 32px 32px;
 }
 
 .pagina-card {
@@ -253,10 +286,6 @@
 }
 
 /* ---------- Aviso novo no menu ---------- */
-.menu-item { position: relative; }
-
-.menu-item .texto { flex: 1; }
-
 /* Menu fechado: bolinha vermelha no sino */
 .menu-ponto {
   position: absolute;
@@ -271,7 +300,9 @@
   transition: opacity 0.15s;
 }
 
-.sidebar:hover .menu-ponto { opacity: 0; }
+.sidebar:hover .menu-ponto {
+  opacity: 0;
+}
 
 /* Menu aberto: etiqueta com a quantidade */
 .menu-pilula {
@@ -286,4 +317,6 @@
   transition: opacity 0.2s;
 }
 
-.sidebar:hover .menu-pilula { opacity: 1; }
+.sidebar:hover .menu-pilula {
+  opacity: 1;
+}

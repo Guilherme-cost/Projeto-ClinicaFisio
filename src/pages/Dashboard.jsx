@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Folha from "../components/Folha";
-import { listarGrupos } from "../services/configService";
-import { listarProfissionais, obterProducao } from "../services/dashboardService";
+import { useToast } from "../components/toastContext";
+import { obterProducao } from "../services/dashboardService";
 import "./Dashboard.css";
 
 // Últimos 6 meses, do mais recente para o mais antigo
@@ -26,57 +26,47 @@ function pct(parte, total) {
 }
 
 function Dashboard() {
+  const toast = useToast();
+
   const [mesValor, setMesValor] = useState(MESES[0].valor);
-  const [grupoId, setGrupoId] = useState("");
-  const [grupos, setGrupos] = useState([]);
   const [dados, setDados] = useState(null);
 
-  // Só lista grupos que têm profissionais
-  useEffect(() => {
-    Promise.all([listarGrupos(), listarProfissionais()]).then(([g, p]) => {
-      setGrupos(g.filter((x) => p.some((pr) => pr.grupoId === x.id)));
-    });
-  }, []);
-
-  // Recarrega sempre que o período ou o grupo mudam
+  // Recarrega quando o período muda. Quando o Master troca o grupo no topo,
+  // o Layout remonta esta tela e ela carrega de novo sozinha.
   useEffect(() => {
     const m = MESES.find((x) => x.valor === mesValor);
     let cancelado = false;
 
-    obterProducao({
-      ano: m.ano,
-      mes: m.mes,
-      grupoId: grupoId === "" ? null : Number(grupoId),
-    }).then((r) => {
-      if (!cancelado) setDados(r);
-    });
+    obterProducao({ ano: m.ano, mes: m.mes })
+      .then((r) => {
+        if (!cancelado) setDados(r);
+      })
+      .catch((err) => {
+        if (cancelado) return;
+        toast.erro(err.message);
+        // Evita ficar preso em "Carregando..." quando a API falha
+        setDados({
+          resumo: { marcacoes: 0, agendados: 0, atendimentos: 0, cancelamentos: 0, faltas: 0 },
+          porProfissional: [],
+          porSemana: [],
+        });
+      });
 
     return () => {
       cancelado = true;
     };
-  }, [mesValor, grupoId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mesValor]);
 
   const filtros = (
-    <>
-      <label className="dash-filtro">
-        Período
-        <select value={mesValor} onChange={(e) => setMesValor(e.target.value)}>
-          {MESES.map((m) => (
-            <option key={m.valor} value={m.valor}>{m.rotulo}</option>
-          ))}
-        </select>
-      </label>
-
-      <label className="dash-filtro">
-        Grupo
-        <select value={grupoId} onChange={(e) => setGrupoId(e.target.value)}>
-          <option value="">Todos</option>
-          {grupos.map((g) => (
-            <option key={g.id} value={g.id}>{g.nome}</option>
-          ))}
-        </select>
-      </label>
-    </>
+    <label className="dash-filtro">
+      Período
+      <select value={mesValor} onChange={(e) => setMesValor(e.target.value)}>
+        {MESES.map((m) => (
+          <option key={m.valor} value={m.valor}>{m.rotulo}</option>
+        ))}
+      </select>
+    </label>
   );
 
   const resumo = dados?.resumo;
@@ -93,7 +83,7 @@ function Dashboard() {
       {!dados && <p className="dash-vazio">Carregando...</p>}
 
       {dados && resumo.marcacoes === 0 && (
-        <p className="dash-vazio">Nenhuma marcação no período e grupo selecionados.</p>
+        <p className="dash-vazio">Nenhuma marcação no período selecionado.</p>
       )}
 
       {dados && resumo.marcacoes > 0 && (

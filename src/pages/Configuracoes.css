@@ -219,3 +219,25 @@
 @media (max-width: 900px) {
   .grupos-layout { grid-template-columns: 1fr; }
 }
+
+.grupo-dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.grupo-dados dt {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #5b6b7b;
+}
+
+.grupo-dados dd {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #12263a;
+}

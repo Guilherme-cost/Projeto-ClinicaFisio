@@ -1,15 +1,7 @@
-import { listarPacientes } from "./pacientesService";
-import { listarCadastro } from "./configService";
-import {
-  HOJE,
-  deISO,
-  ehFimDeSemana,
-  horaParaMinutos,
-  inicioDaSemana,
-  minutosParaHora,
-  paraISO,
-  somarDias,
-} from "../utils/datas";
+import { api } from "./api";
+import { ROTAS } from "../config/apiRoutes";
+import { ehMaster, idGrupoAtual } from "./escopo";
+import { deISO, ehFimDeSemana, horaParaMinutos, minutosParaHora } from "../utils/datas";
 
 export const STATUS = {
   agendado: "Agendado",
@@ -18,58 +10,47 @@ export const STATUS = {
   cancelado: "Cancelado",
 };
 
+// De-para: chave da tela <-> id da tabela status_agendamento
+const STATUS_ID = { agendado: 1, atendido: 2, cancelado: 3, faltou: 4 };
+const STATUS_CHAVE = { 1: "agendado", 2: "atendido", 3: "cancelado", 4: "faltou" };
+
+// Cancelado e Faltou liberam o horário (libera_horario = 1)
+const LIBERAM_HORARIO = ["cancelado", "faltou"];
+
 // Horários de 30 em 30 minutos, das 08:00 às 17:30
 export const HORARIOS = Array.from({ length: 20 }, (_, i) => minutosParaHora(8 * 60 + i * 30));
 
-// ---------- Dados de exemplo (semana anterior, atual e próxima) ----------
-const SLOTS = {
-  1: ["08:00", "09:00", "10:00", "14:00"],
-  2: ["08:30", "09:30", "14:30", "15:30"],
-};
-const PACIENTES_EXEMPLO = [1, 2, 3, 5, 6, 8, 9, 10];
-
-function gerarInicial() {
-  const lista = [];
-  const segunda = inicioDaSemana(HOJE);
-  const hojeISO = paraISO(HOJE);
-  let id = 1;
-  let n = 0;
-
-  for (let semana = -1; semana <= 1; semana++) {
-    for (let d = 0; d < 5; d++) {
-      const iso = paraISO(somarDias(segunda, semana * 7 + d));
-
-      [1, 2].forEach((professorId) => {
-        SLOTS[professorId].forEach((hora, i) => {
-          n++;
-          let status = "agendado";
-          if (iso < hojeISO) status = n % 9 === 0 ? "cancelado" : n % 13 === 0 ? "faltou" : "atendido";
-          else if (iso === hojeISO && i < 2) status = "atendido";
-
-          lista.push({
-            id: id++,
-            data: iso,
-            hora,
-            pacienteId: PACIENTES_EXEMPLO[n % PACIENTES_EXEMPLO.length],
-            procedimentoId: (n % 4) + 1,
-            professorId,
-            status,
-            observacoes: "",
-          });
-        });
-      });
-    }
-  }
-  return lista;
+// O Master precisa informar o grupo. Os demais usam o grupo do token (a API ignora o idGrupo deles).
+// "grupo": grupo do próprio agendamento (para o Master editar mesmo em "Todos os grupos").
+// "obrigatorio": gravações e telas que não fazem sentido sem um grupo escolhido.
+function comGrupo(caminho, extra = {}, { grupo, obrigatorio = false } = {}) {
+  const q = new URLSearchParams(extra);
+  const id = ehMaster() ? (grupo ?? idGrupoAtual({ obrigatorio })) : null;
+  if (id) q.set("idGrupo", id);
+  const texto = q.toString();
+  return texto ? `${caminho}?${texto}` : caminho;
 }
 
-let agendamentos = gerarInicial();
-let proximoId = agendamentos.length + 1;
-
-// ---------- Regras ----------
-async function carregarDuracoes() {
-  const procs = await listarCadastro("procedimentos");
-  return Object.fromEntries(procs.map((p) => [p.id, p.duracao]));
+// API -> tela. "inicio" vem como "2026-10-20T14:00:00" (horário da clínica, sem fuso).
+function doApi(a) {
+  const inicio = String(a.inicio ?? "");
+  return {
+    id: a.id,
+    data: inicio.slice(0, 10),
+    hora: inicio.slice(11, 16),
+    horaFim: String(a.fim ?? "").slice(11, 16),
+    pacienteId: a.idPaciente,
+    paciente: a.paciente ?? "",
+    procedimentoId: a.idProcedimento,
+    procedimento: a.procedimento ?? "",
+    professorId: a.idProfissional,
+    profissional: a.profissional ?? "",
+    duracaoMinutos: a.duracaoMinutos ?? 50,
+    status: STATUS_CHAVE[a.idStatusAgendamento] ?? "agendado",
+    observacoes: a.observacoes ?? "",
+    idGrupo: a.idGrupo,
+    grupo: a.grupo ?? "",
+  };
 }
 
 function sobrepoe(horaA, durA, horaB, durB) {
@@ -78,69 +59,84 @@ function sobrepoe(horaA, durA, horaB, durB) {
   return a < b + durB && b < a + durA;
 }
 
-function conflitos({ data, hora, professorId, procedimentoId, pacienteId }, duracoes, ignorarId) {
-  const dur = duracoes[procedimentoId] ?? 50;
-  const r = { profissional: false, paciente: false };
-
-  agendamentos.forEach((a) => {
-    if (a.id === ignorarId || a.status === "cancelado" || a.data !== data) return;
-    if (!sobrepoe(hora, dur, a.hora, duracoes[a.procedimentoId] ?? 50)) return;
-    if (a.professorId === professorId) r.profissional = true;
-    if (pacienteId && a.pacienteId === pacienteId) r.paciente = true;
-  });
-  return r;
-}
-
-// ---------- Funções usadas pelas telas ----------
+// ---------- Leitura ----------
+// "ate" é inclusivo. Master em "Todos os grupos" recebe todos.
 export async function listarAgendamentos(inicioISO, fimISO) {
-  return agendamentos
-    .filter((a) => a.data >= inicioISO && a.data <= fimISO)
-    .sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora))
-    .map((a) => ({ ...a }));
+  const lista = await api(comGrupo(ROTAS.agendamentos, { de: inicioISO, ate: fimISO }));
+  return lista
+    .map(doApi)
+    .sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
 }
 
-// Horários que já estão ocupados para o profissional (ou paciente) naquele dia
-export async function horariosOcupados({ data, professorId, procedimentoId, pacienteId, ignorarId }) {
-  const duracoes = await carregarDuracoes();
-  return HORARIOS.filter((hora) => {
-    const c = conflitos({ data, hora, professorId, procedimentoId, pacienteId }, duracoes, ignorarId);
-    return c.profissional || c.paciente;
-  });
+// Para o filtro de profissional da tela
+export async function listarProfissionais() {
+  const lista = await api(comGrupo(ROTAS.profissionais));
+  return lista.map((p) => ({ id: p.id, nome: p.nome }));
 }
 
+// Profissionais e procedimentos ativos do grupo, para os selects do modal
+export async function listarOpcoesAgendamento({ grupo } = {}) {
+  const r = await api(comGrupo(ROTAS.agendamentosOpcoes, {}, { grupo, obrigatorio: true }));
+  return {
+    profissionais: r?.profissionais ?? [],
+    procedimentos: r?.procedimentos ?? [],
+  };
+}
+
+// Horários ocupados para o profissional (ou paciente) naquele dia.
+// É só um aviso visual: quem decide de verdade é a API ao gravar.
+export async function horariosOcupados({ data, professorId, pacienteId, duracao, ignorarId, grupo }) {
+  const consultas = [
+    api(comGrupo(ROTAS.agendamentos, { de: data, ate: data, idProfissional: professorId }, { grupo })),
+  ];
+  if (pacienteId) {
+    consultas.push(
+      api(comGrupo(ROTAS.agendamentos, { de: data, ate: data, idPaciente: pacienteId }, { grupo }))
+    );
+  }
+
+  const resultados = await Promise.all(consultas);
+
+  const unicos = new Map();
+  resultados.flat().forEach((a) => unicos.set(a.id, doApi(a)));
+
+  const ocupam = [...unicos.values()].filter(
+    (a) => a.id !== ignorarId && !LIBERAM_HORARIO.includes(a.status)
+  );
+
+  return HORARIOS.filter((hora) =>
+    ocupam.some((a) => sobrepoe(hora, duracao ?? 50, a.hora, a.duracaoMinutos))
+  );
+}
+
+// ---------- Escrita ----------
+// Se vier com id, edita. Se não vier, cria. A API calcula o fim (início + duração do procedimento).
 export async function salvarAgendamento(dados) {
-  const [duracoes, pacientes, professores] = await Promise.all([
-    carregarDuracoes(),
-    listarPacientes(),
-    listarCadastro("professores"),
-  ]);
-
   if (ehFimDeSemana(deISO(dados.data))) {
     throw new Error("A clínica não atende aos sábados e domingos.");
   }
 
-  const paciente = pacientes.find((p) => p.id === dados.pacienteId);
-  if (!dados.id && !paciente?.ativo) {
-    throw new Error("Não é possível agendar para um paciente inativo.");
-  }
-
-  if (dados.status !== "cancelado") {
-    const c = conflitos(dados, duracoes, dados.id);
-    if (c.profissional) {
-      const prof = professores.find((p) => p.id === dados.professorId);
-      throw new Error(`${prof?.nome ?? "O profissional"} já tem um atendimento neste horário.`);
-    }
-    if (c.paciente) {
-      throw new Error(`${paciente?.nome ?? "O paciente"} já tem um atendimento neste horário.`);
-    }
-  }
+  const corpo = {
+    inicio: `${dados.data}T${dados.hora}:00`,
+    idPaciente: Number(dados.pacienteId),
+    idProfissional: Number(dados.professorId),
+    idProcedimento: Number(dados.procedimentoId),
+    // Novo: null deixa a API aplicar o status inicial
+    idStatusAgendamento: dados.id ? (STATUS_ID[dados.status] ?? null) : null,
+    observacoes: String(dados.observacoes ?? "").trim() || null,
+  };
 
   if (dados.id) {
-    agendamentos = agendamentos.map((a) => (a.id === dados.id ? { ...a, ...dados } : a));
-    return { ...agendamentos.find((a) => a.id === dados.id) };
+    const r = await api(
+      comGrupo(ROTAS.agendamento(dados.id), {}, { grupo: dados.idGrupo, obrigatorio: true }),
+      { method: "PUT", corpo }
+    );
+    return doApi(r);
   }
 
-  const novo = { ...dados, id: proximoId++, status: dados.status ?? "agendado" };
-  agendamentos = [...agendamentos, novo];
-  return { ...novo };
+  const r = await api(comGrupo(ROTAS.agendamentos, {}, { obrigatorio: true }), {
+    method: "POST",
+    corpo,
+  });
+  return doApi(r);
 }

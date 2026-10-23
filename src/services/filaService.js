@@ -1,32 +1,52 @@
-import { listarPacientes } from "./pacientesService";
-import { listarCadastro, salvarCadastro, usuarioLogado } from "./configService";
-import { HOJE, deISO, paraISO, somarDias } from "../utils/datas";
+import { api } from "./api";
+import { ROTAS } from "../config/apiRoutes";
+import { idGrupoAtual } from "./escopo";
+import { HOJE, deISO } from "../utils/datas";
 
 export const PRIORIDADES = { alta: "Alta", media: "Média", baixa: "Baixa" };
 export const PESO = { alta: 0, media: 1, baixa: 2 };
 
-const desde = (dias) => paraISO(somarDias(HOJE, -dias));
+// De-para: chave da tela <-> id da tabela prioridade_fila (1 Alta, 2 Média, 3 Baixa)
+const PRIORIDADE_ID = { alta: 1, media: 2, baixa: 3 };
+const PRIORIDADE_CHAVE = { 1: "alta", 2: "media", 3: "baixa" };
 
-// Dados de exemplo. Ids de pacientes e especialidades vêm dos outros serviços.
-let fila = [
-  { id: 1, pacienteId: 8, especialidadeId: 1, prioridade: "alta", entrada: desde(42), observacao: "" },
-  { id: 2, pacienteId: 10, especialidadeId: 1, prioridade: "alta", entrada: desde(31), observacao: "" },
-  { id: 3, pacienteId: 3, especialidadeId: 1, prioridade: "media", entrada: desde(18), observacao: "" },
-  { id: 4, pacienteId: 6, especialidadeId: 1, prioridade: "baixa", entrada: desde(6), observacao: "" },
-  { id: 5, pacienteId: 9, especialidadeId: 2, prioridade: "media", entrada: desde(25), observacao: "" },
-  { id: 6, pacienteId: 5, especialidadeId: 2, prioridade: "baixa", entrada: desde(9), observacao: "" },
-  { id: 7, pacienteId: 1, especialidadeId: 3, prioridade: "alta", entrada: desde(20), observacao: "" },
-  { id: 8, pacienteId: 2, especialidadeId: 3, prioridade: "media", entrada: desde(12), observacao: "" },
-  { id: 9, pacienteId: 8, especialidadeId: 3, prioridade: "baixa", entrada: desde(5), observacao: "" },
-  { id: 10, pacienteId: 3, especialidadeId: 4, prioridade: "baixa", entrada: desde(4), observacao: "" },
-];
+const soData = (d) => (d ? String(d).slice(0, 10) : "");
 
-let proximoId = 11;
+const opcional = (v) => {
+  const t = String(v ?? "").trim();
+  return t === "" ? null : t;
+};
 
-function exigirMaster(acao) {
-  if (!usuarioLogado().master) {
-    throw new Error(`Somente um usuário Master pode ${acao}.`);
-  }
+// A fila sempre exige um grupo: as especialidades são por grupo e se repetem entre filiais.
+// O Master usa o grupo escolhido no seletor do topo (em "Todos os grupos" a chamada é
+// interrompida com um aviso). Os demais usam o grupo do token e a API ignora o idGrupo deles.
+function comGrupo(caminho, extra = {}) {
+  const q = new URLSearchParams(extra);
+  const id = idGrupoAtual({ obrigatorio: true });
+  if (id) q.set("idGrupo", id);
+  const texto = q.toString();
+  return texto ? `${caminho}?${texto}` : caminho;
+}
+
+function exigirPrioridade(chave) {
+  if (!PRIORIDADE_ID[chave]) throw new Error("Selecione a prioridade.");
+}
+
+// API -> tela. Quem ainda não é paciente não tem pacienteId: nome e telefone vêm no próprio item.
+function doApi(f) {
+  return {
+    id: f.id,
+    pacienteId: f.idPaciente ?? null,
+    jaEPaciente: !!f.jaEPaciente,
+    especialidadeId: f.idEspecialidade,
+    especialidade: f.especialidade ?? "",
+    prioridade: PRIORIDADE_CHAVE[f.idPrioridade] ?? "baixa",
+    entrada: soData(f.entrada),
+    observacao: f.observacoes ?? "",
+    nome: f.nome ?? "",
+    cpf: f.cpf ?? "",
+    telefone: f.telefone ?? "",
+  };
 }
 
 export function diasDeEspera(entradaISO) {
@@ -34,68 +54,90 @@ export function diasDeEspera(entradaISO) {
   return Math.round((hoje - deISO(entradaISO)) / 86400000);
 }
 
-export async function listarFila() {
-  return fila.map((i) => ({ ...i }));
+// ---------- Especialidades (as seções da tela) ----------
+export async function listarEspecialidades() {
+  const lista = await api(comGrupo(ROTAS.especialidades, { inativo: 0 }));
+  return lista.map((e) => ({ id: e.id, nome: e.nome, ativo: true }));
 }
 
-export async function adicionarNaFila({ pacienteId, especialidadeId, prioridade, observacao = "" }) {
-  const [pacientes, especialidades] = await Promise.all([
-    listarPacientes(),
-    listarCadastro("especialidades"),
-  ]);
-
-  const paciente = pacientes.find((p) => p.id === pacienteId);
-  if (!paciente?.ativo) throw new Error("Selecione um paciente ativo.");
-
-  const esp = especialidades.find((e) => e.id === especialidadeId);
-  if (!esp?.ativo) throw new Error("Selecione uma especialidade ativa.");
-
-  if (!PRIORIDADES[prioridade]) throw new Error("Selecione a prioridade.");
-
-  if (fila.some((i) => i.pacienteId === pacienteId && i.especialidadeId === especialidadeId)) {
-    throw new Error(`${paciente.nome} já está na fila de ${esp.nome}.`);
-  }
-
-  const novo = {
-    id: proximoId++,
-    pacienteId,
-    especialidadeId,
-    prioridade,
-    entrada: paraISO(HOJE),
-    observacao: observacao.trim(),
-  };
-  fila = [...fila, novo];
-  return { ...novo };
-}
-
-export async function atualizarFila({ id, prioridade, observacao = "" }) {
-  if (!PRIORIDADES[prioridade]) throw new Error("Selecione a prioridade.");
-  fila = fila.map((i) => (i.id === id ? { ...i, prioridade, observacao: observacao.trim() } : i));
-  return { ...fila.find((i) => i.id === id) };
-}
-
-// Remoção manual: só Master
-export async function removerDaFila(id) {
-  exigirMaster("remover alguém da fila");
-  fila = fila.filter((i) => i.id !== id);
-}
-
-// Chamada quando o paciente é agendado: sai da fila sem exigir Master
-export async function concluirFila(id) {
-  fila = fila.filter((i) => i.id !== id);
-}
-
-// Nova seção = nova especialidade (aparece também em Configurações)
+// Nova seção = nova especialidade. O peso mínimo é decidido pela API.
 export async function criarSecao(nome) {
-  exigirMaster("criar seções");
+  const r = await api(comGrupo(ROTAS.especialidades), {
+    method: "POST",
+    corpo: { nome: String(nome ?? "").trim() },
+  });
+  return { id: r.id, nome: r.nome };
+}
 
-  const nomeLimpo = nome.trim();
-  if (nomeLimpo.length < 3) throw new Error("Informe o nome da especialidade.");
+// ---------- Fila ----------
+export async function listarFila() {
+  const lista = await api(comGrupo(ROTAS.filaEspera));
+  return lista.map(doApi);
+}
 
-  const existentes = await listarCadastro("especialidades");
-  if (existentes.some((e) => e.nome.toLowerCase() === nomeLimpo.toLowerCase())) {
-    throw new Error("Já existe uma especialidade com esse nome.");
+// Aqui só entra quem já é paciente (como na tela atual)
+export async function adicionarNaFila({ pacienteId, especialidadeId, prioridade, observacao = "" }) {
+  exigirPrioridade(prioridade);
+
+  const r = await api(comGrupo(ROTAS.filaEspera), {
+    method: "POST",
+    corpo: {
+      idEspecialidade: Number(especialidadeId),
+      idPrioridade: PRIORIDADE_ID[prioridade],
+      idPaciente: Number(pacienteId),
+      observacoes: opcional(observacao),
+    },
+  });
+  return doApi(r);
+}
+
+// Recebe o item inteiro (a tela manda {...item, prioridade, observacao})
+export async function atualizarFila(d) {
+  exigirPrioridade(d.prioridade);
+
+  const corpo = {
+    idEspecialidade: d.especialidadeId,
+    idPrioridade: PRIORIDADE_ID[d.prioridade],
+    observacoes: opcional(d.observacao),
+  };
+
+  if (d.pacienteId) {
+    corpo.idPaciente = d.pacienteId;
+  } else {
+    corpo.nome = d.nome;
+    corpo.cpf = opcional(d.cpf);
+    corpo.telefone = opcional(d.telefone);
   }
 
-  return salvarCadastro("especialidades", { nome: nomeLimpo });
+  const r = await api(comGrupo(ROTAS.filaItem(d.id)), { method: "PUT", corpo });
+  return r?.id ? doApi(r) : { ...d };
+}
+
+// Apaga o registro. O peso mínimo é decidido pela API.
+export async function removerDaFila(id) {
+  await api(comGrupo(ROTAS.filaItem(id)), { method: "DELETE" });
+}
+
+// ---------- Agendar pela fila ----------
+// Profissionais e procedimentos do grupo, para os selects do modal
+export async function listarOpcoesAgendamento() {
+  const r = await api(comGrupo(ROTAS.agendamentosOpcoes));
+  return {
+    profissionais: r?.profissionais ?? [],
+    procedimentos: r?.procedimentos ?? [],
+  };
+}
+
+// Numa única transação: cria o paciente (se novo), cria o agendamento e tira da fila.
+// "inicio" vai sem o Z no final, ex.: "2026-10-21T10:00:00" (horário da clínica).
+export async function agendarDaFila(id, { inicio, idProfissional, idProcedimento, observacoes }) {
+  return api(comGrupo(ROTAS.filaAgendar(id)), {
+    method: "POST",
+    corpo: {
+      inicio,
+      idProfissional: Number(idProfissional),
+      idProcedimento: Number(idProcedimento),
+      observacoes: opcional(observacoes),
+    },
+  });
 }

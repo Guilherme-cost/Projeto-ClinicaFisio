@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useToast } from "./toastContext";
-import { HORARIOS, STATUS, horariosOcupados } from "../services/agendamentosService";
+import {
+  HORARIOS,
+  STATUS,
+  horariosOcupados,
+  listarOpcoesAgendamento,
+} from "../services/agendamentosService";
+import { listarPacientes } from "../services/pacientesService";
 
 const paraNumero = (v) => (v === "" ? "" : Number(v));
 
-function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSalvar, onFechar }) {
+function AgendamentoModal({ agendamento, dataInicial, onSalvar, onFechar }) {
   const toast = useToast();
   const novo = !agendamento;
 
+  const [catalogo, setCatalogo] = useState(null);
   const [form, setForm] = useState(() => ({
-    pacienteId: agendamento?.pacienteId ?? preenchido?.pacienteId ?? "",
+    pacienteId: agendamento?.pacienteId ?? "",
     procedimentoId: agendamento?.procedimentoId ?? "",
     professorId: agendamento?.professorId ?? "",
     data: agendamento?.data ?? dataInicial,
@@ -22,25 +29,76 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
   const [ocupados, setOcupados] = useState([]);
   const [salvando, setSalvando] = useState(false);
 
-  // Descobre quais horários estão ocupados sempre que algo relevante muda
+  // Carrega pacientes, profissionais e procedimentos. Na edição usa o grupo do próprio agendamento.
   useEffect(() => {
-    if (!form.professorId || !form.procedimentoId || !form.data) return;
     let cancelado = false;
 
-    horariosOcupados({
-      data: form.data,
-      professorId: form.professorId,
-      procedimentoId: form.procedimentoId,
-      pacienteId: form.pacienteId,
-      ignorarId: agendamento?.id,
-    }).then((lista) => {
-      if (!cancelado) setOcupados(lista);
-    });
+    Promise.all([listarPacientes(), listarOpcoesAgendamento({ grupo: agendamento?.idGrupo })])
+      .then(([pacientes, opcoes]) => {
+        if (cancelado) return;
+
+        const professores = [...opcoes.profissionais];
+        const procedimentos = [...opcoes.procedimentos];
+        const todosPacientes = [...pacientes];
+
+        // Na edição, o que já estava salvo continua aparecendo, mesmo se estiver inativo
+        if (agendamento) {
+          if (!professores.some((p) => p.id === agendamento.professorId)) {
+            professores.push({ id: agendamento.professorId, nome: agendamento.profissional });
+          }
+          if (!procedimentos.some((p) => p.id === agendamento.procedimentoId)) {
+            procedimentos.push({
+              id: agendamento.procedimentoId,
+              nome: agendamento.procedimento,
+              duracaoMinutos: agendamento.duracaoMinutos,
+            });
+          }
+          if (!todosPacientes.some((p) => p.id === agendamento.pacienteId)) {
+            todosPacientes.push({ id: agendamento.pacienteId, nome: agendamento.paciente, ativo: true });
+          }
+        }
+
+        setCatalogo({ pacientes: todosPacientes, procedimentos, professores });
+      })
+      .catch((e) => {
+        if (cancelado) return;
+        toast.erro(e.message);
+        onFechar();
+      });
 
     return () => {
       cancelado = true;
     };
-  }, [form.professorId, form.procedimentoId, form.data, form.pacienteId, agendamento?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Descobre quais horários estão ocupados sempre que algo relevante muda
+  useEffect(() => {
+    if (!catalogo || !form.professorId || !form.procedimentoId || !form.data) return;
+    let cancelado = false;
+
+    const duracao = catalogo.procedimentos.find((p) => p.id === form.procedimentoId)?.duracaoMinutos;
+
+    horariosOcupados({
+      data: form.data,
+      professorId: form.professorId,
+      pacienteId: form.pacienteId,
+      duracao,
+      ignorarId: agendamento?.id,
+      grupo: agendamento?.idGrupo,
+    })
+      .then((lista) => {
+        if (!cancelado) setOcupados(lista);
+      })
+      .catch(() => {
+        // Só um aviso visual: se falhar, a API ainda valida ao gravar
+        if (!cancelado) setOcupados([]);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [catalogo, form.professorId, form.procedimentoId, form.data, form.pacienteId, agendamento?.id, agendamento?.idGrupo]);
 
   function alterar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -69,20 +127,24 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
     setSalvando(true);
     try {
       await onSalvar({
-        ...(agendamento ? { id: agendamento.id } : {}),
+        ...(agendamento ? { id: agendamento.id, idGrupo: agendamento.idGrupo } : {}),
         ...form,
         observacoes: form.observacoes.trim(),
       });
     } catch (erro) {
+      // Inclui HORARIO_OCUPADO e ATENDIMENTO_OUTRA_FILIAL: a mensagem já vem pronta da API
       toast.erro(erro.message);
       setSalvando(false);
     }
   }
 
-  // Na lista só aparecem ativos (mais o que já estava salvo no agendamento)
-  const pacientes = catalogo.pacientes.filter((p) => p.ativo || p.id === form.pacienteId);
-  const procedimentos = catalogo.procedimentos.filter((p) => p.ativo || p.id === form.procedimentoId);
-  const professores = catalogo.professores.filter((p) => p.ativo || p.id === form.professorId);
+  const carregando = !catalogo;
+  const rotuloVazio = carregando ? "Carregando..." : "Selecione...";
+
+  // Na lista só aparecem pacientes ativos (mais o que já estava salvo no agendamento)
+  const pacientes = (catalogo?.pacientes ?? []).filter((p) => p.ativo || p.id === form.pacienteId);
+  const procedimentos = catalogo?.procedimentos ?? [];
+  const professores = catalogo?.professores ?? [];
 
   return (
     <div className="modal-fundo">
@@ -129,9 +191,10 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
               <select
                 id="ag-paciente"
                 value={form.pacienteId}
+                disabled={carregando}
                 onChange={(e) => alterar("pacienteId", paraNumero(e.target.value))}
               >
-                <option value="">Selecione...</option>
+                <option value="">{rotuloVazio}</option>
                 {pacientes.map((p) => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}
@@ -144,9 +207,10 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
               <select
                 id="ag-proc"
                 value={form.procedimentoId}
+                disabled={carregando}
                 onChange={(e) => alterar("procedimentoId", paraNumero(e.target.value))}
               >
-                <option value="">Selecione...</option>
+                <option value="">{rotuloVazio}</option>
                 {procedimentos.map((p) => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}
@@ -159,9 +223,10 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
               <select
                 id="ag-prof"
                 value={form.professorId}
+                disabled={carregando}
                 onChange={(e) => alterar("professorId", paraNumero(e.target.value))}
               >
-                <option value="">Selecione...</option>
+                <option value="">{rotuloVazio}</option>
                 {professores.map((p) => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}
@@ -210,7 +275,7 @@ function AgendamentoModal({ agendamento, dataInicial, catalogo, preenchido, onSa
 
           <div className="modal-rodape">
             <button type="button" className="btn-secundario" onClick={onFechar}>Cancelar</button>
-            <button type="submit" className="btn-primario" disabled={salvando}>
+            <button type="submit" className="btn-primario" disabled={salvando || carregando}>
               {novo ? "Agendar" : "Salvar alterações"}
             </button>
           </div>

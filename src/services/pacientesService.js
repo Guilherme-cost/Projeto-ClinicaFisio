@@ -1,7 +1,6 @@
 import { api } from "./api";
 import { ROTAS } from "../config/apiRoutes";
-import { PESO_MASTER } from "../config/permissoes";
-import { lerSessao } from "./sessao";
+import { sufixoGrupo } from "./escopo";
 
 // API -> tela: a API manda null nos campos vazios, e os campos do formulário precisam de texto
 function doApi(p) {
@@ -38,15 +37,13 @@ function corpoDe(d) {
   };
 }
 
-// O Master precisa informar o grupo nas gravações. Os demais usam o grupo do token.
-// PROVISÓRIO: por enquanto usa o grupo do próprio Master (passo 4b: seletor de grupo).
-function grupoQuery() {
-  const u = lerSessao()?.usuario;
-  return u && u.peso >= PESO_MASTER ? `?idGrupo=${u.idGrupo}` : "";
-}
+// Gravações exigem grupo. O Master precisa ter escolhido um no seletor do topo
+// (os demais usam o grupo do token e a API ignora o idGrupo deles).
+const grupoQuery = () => sufixoGrupo({ obrigatorio: true });
 
+// Leitura: com "Todos os grupos" o Master vê os pacientes de todas as empresas
 export async function listarPacientes() {
-  const lista = await api(ROTAS.pacientes);
+  const lista = await api(`${ROTAS.pacientes}${sufixoGrupo()}`);
   return lista.map(doApi);
 }
 

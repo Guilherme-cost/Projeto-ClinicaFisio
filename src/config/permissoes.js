@@ -4,9 +4,9 @@ export { PESO_MASTER };
 
 // Pesos mínimos das funcionalidades (ações). Use sempre o peso, nunca o nome do nível.
 export const PESO_MINIMO = {
-  retirarDaFila: 2,
+  retirarDaFila: 1,
   gerenciarUsuarios: 2,
-  criarEspecialidade: PESO_MASTER,
+  criarEspecialidade: 2,
   gerenciarAvisos: 2,
 };
 
