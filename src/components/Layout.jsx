@@ -9,6 +9,7 @@ import {
   LuLayoutDashboard,
   LuFileText,
   LuSettings,
+  LuClipboardList,
 } from "react-icons/lu";
 import { podeVerTela } from "../config/permissoes";
 import { useAuth } from "../contexts/AuthContext";
@@ -20,6 +21,7 @@ import "./Layout.css";
 
 const menuPrincipal = [
   { nome: "Agendamentos", icone: <LuCalendarDays />, caminho: "/agendamentos" },
+  { nome: "Fila do dia", icone: <LuClipboardList />, caminho: "/fila-dia" },
   { nome: "Fila de Espera", icone: <LuClock />, caminho: "/fila-de-espera" },
   { nome: "Pacientes", icone: <LuUsers />, caminho: "/pacientes" },
   { nome: "Estoque", icone: <LuPackage />, caminho: "/estoque" },
@@ -41,9 +43,9 @@ function Layout() {
   const escopo = useEscopo(); // grupo escolhido pelo Master (null = todos)
 
   // Recalcula o contador do menu ao entrar e sempre que o Master troca de grupo
-  useEffect(() => {
-    recalcularNaoLidos();
-  }, [escopo.idGrupo]);
+    useEffect(() => {
+    if (usuario && podeVerTela(usuario, "/avisos")) recalcularNaoLidos();
+  }, [escopo.idGrupo, usuario]);
 
   if (!usuario) return null; // a PrivateRoute já redireciona para o login
 

@@ -1,0 +1,397 @@
+/* ---------- Topo da folha ---------- */
+.fd-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.fd-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 6px;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+}
+
+.fd-nav button {
+  display: flex;
+  padding: 4px;
+  font-size: 18px;
+  color: #1c6fb8;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.fd-nav strong {
+  min-width: 150px;
+  text-align: center;
+  color: #12263a;
+}
+
+.fd-hoje {
+  height: 38px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c6fb8;
+  background: #eaf3fb;
+  border: 1px solid #cfe2f3;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.fd-busca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 38px;
+  padding: 0 10px;
+  color: #5b6b7b;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+}
+
+.fd-busca:focus-within { border-color: #2f80c4; }
+
+.fd-busca input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 14px;
+  color: #12263a;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.fd-novo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+  color: #fff;
+  background: #1c6fb8;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.fd-novo:disabled,
+.fd-mais:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Contadores ---------- */
+.fd-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #5b6b7b;
+}
+
+.fd-total {
+  padding: 7px 14px;
+  font-size: 14px;
+  color: #12263a;
+  background: #eef2f7;
+  border-radius: 6px;
+}
+
+.fd-contador { display: inline-flex; align-items: center; gap: 6px; }
+.fd-contador b { color: #12263a; font-size: 14px; }
+
+.fd-contador i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.fd-contador i.atrasado { background: #dc2626; }
+.fd-contador i.atendimento { background: #ea7a0c; }
+.fd-contador i.concluido { background: #16a34a; }
+.fd-contador i.aguardando { background: #d97706; }
+.fd-contador i.encaixe { background: #2f80c4; }
+.fd-contador i.faltou { background: #8a96a3; }
+
+/* ---------- Avisos ---------- */
+.fd-aviso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #3f4f5f;
+  background: #fff;
+  border: 1px solid #e1e8f0;
+  border-bottom: 3px solid #2f80c4;
+  border-radius: 6px;
+}
+
+.fd-aviso.erro { color: #991b1b; border-bottom-color: #dc2626; }
+
+.fd-aviso button {
+  height: 32px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c6fb8;
+  background: #eaf3fb;
+  border: 1px solid #cfe2f3;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ---------- Quadro e colunas ---------- */
+.fd-quadro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.fd-coluna {
+  padding: 10px;
+  background: #f5f8fb;
+  border: 1px solid #e1e8f0;
+  border-radius: 8px;
+}
+
+.fd-coluna header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #cdd9e6;
+}
+
+.fd-coluna h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #0f3460;
+}
+
+.fd-coluna header span { font-size: 12px; color: #5b6b7b; }
+
+.fd-itens {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fd-vazio {
+  margin: 8px 0;
+  font-size: 13px;
+  text-align: center;
+  color: #5b6b7b;
+}
+
+/* ---------- Cartões ---------- */
+.fd-cartao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: #fff;
+  border: 1px solid #e1e8f0;
+  border-left: 4px solid #aab4be;
+  border-radius: 6px;
+}
+
+.fd-cartao.agendado { border-left-color: #aab4be; }
+.fd-cartao.confirmado { border-left-color: #2f80c4; }
+.fd-cartao.aguardando { border-left-color: #d97706; }
+.fd-cartao.atendimento { border-left-color: #ea7a0c; }
+.fd-cartao.concluido { border-left-color: #16a34a; }
+.fd-cartao.faltou { border-left-color: #8a96a3; }
+.fd-cartao.cancelado { border-left-color: #dc2626; }
+.fd-cartao.semhorario { border-left-color: #d97706; }
+.fd-cartao.atrasado { border-left-color: #dc2626; background: #fffafa; }
+
+.fd-hora {
+  display: flex;
+  flex-direction: column;
+  min-width: 50px;
+}
+
+.fd-hora b { font-size: 15px; color: #12263a; }
+.fd-hora small { font-size: 11px; color: #5b6b7b; }
+
+.fd-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fd-info strong { font-size: 14px; color: #12263a; }
+.fd-info span { font-size: 12px; color: #5b6b7b; }
+
+.fd-info .fd-fora {
+  align-self: flex-start;
+  margin-top: 3px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fff3dd;
+  border-radius: 3px;
+}
+
+.fd-etiquetas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* ---------- Espaço livre ---------- */
+.fd-livre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: transparent;
+  border: 1px dashed #b7c8da;
+  border-radius: 6px;
+}
+
+.fd-livre .fd-hora b { color: #5b6b7b; }
+.fd-livre-texto { flex: 1; font-size: 13px; color: #5b6b7b; }
+
+.fd-mais {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 17px;
+  color: #1c6fb8;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ---------- Etiquetas de status (quadradas, borda fina, bolinha) ---------- */
+.fd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid;
+  border-radius: 3px;
+}
+
+.fd-badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.fd-badge.agendado { color: #475569; background: #eef1f4; border-color: #cbd3db; }
+.fd-badge.confirmado { color: #1d5a9a; background: #e3effa; border-color: #b9d4ee; }
+.fd-badge.aguardando,
+.fd-badge.semhorario { color: #92400e; background: #fff3dd; border-color: #f0d49a; }
+.fd-badge.atendimento { color: #c2410c; background: #ffeedd; border-color: #f5c9a0; }
+.fd-badge.concluido { color: #166534; background: #e6f7ec; border-color: #a9dcba; }
+.fd-badge.faltou { color: #5b6b7b; background: #eef1f4; border-color: #cbd3db; }
+.fd-badge.cancelado,
+.fd-badge.atrasado { color: #991b1b; background: #fdecec; border-color: #f1b4b4; }
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 700px) {
+  .fd-busca { width: 100%; order: 5; }
+  .fd-acoes { justify-content: flex-start; }
+}
+
+/* ---------- Arrastar e soltar (Sem médico -> espaço livre) ---------- */
+.fd-cartao.arrastavel { cursor: grab; }
+.fd-cartao.arrastavel:active { cursor: grabbing; }
+.fd-cartao.arrastavel:focus-visible { outline: 3px solid rgba(28, 111, 184, 0.35); outline-offset: 1px; }
+.fd-cartao.arrastando { opacity: 0.4; }
+
+.fd-cartao.selecionado {
+  background: #eef5fc;
+  border-color: #2f80c4;
+  box-shadow: 0 0 0 2px #2f80c4;
+}
+
+/* Espaços livres que aceitam o paciente */
+.fd-livre { transition: background 0.12s, border-color 0.12s; }
+
+.fd-livre.alvo {
+  background: #f3f8fd;
+  border-color: #2f80c4;
+}
+
+.fd-livre.sobre {
+  background: #dcebf8;
+  border-style: solid;
+  box-shadow: 0 0 0 2px #2f80c4;
+}
+
+.fd-mais.pronto {
+  color: #fff;
+  background: #1c6fb8;
+  border-color: #1c6fb8;
+}
+
+.fd-dica-coluna {
+  margin: 4px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: #5b6b7b;
+}
+
+/* ---------- Modal de alocação ---------- */
+.fd-modal-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #f5f8fb;
+  border: 1px solid #e1e8f0;
+  border-radius: 6px;
+}
+
+.fd-modal-resumo dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5b6b7b;
+}
+
+.fd-modal-resumo dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #12263a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fd-livre { transition: none; }
+}

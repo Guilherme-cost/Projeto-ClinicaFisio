@@ -51,4 +51,14 @@ export const ROTAS = {
   procedimentos: "/api/procedimentos",
   procedimento: (id) => `/api/procedimentos/${id}`,
   reativarProcedimento: (id) => `/api/procedimentos/${id}/reativar`,
+
+  // ---------- Fila do dia e horários de trabalho ----------
+  filaDia: "/api/fila-dia",
+  disponibilidade: "/api/agendamentos/disponibilidade",
+  horariosTrabalho: (idProfissional) => `/api/profissionais/${idProfissional}/horarios-trabalho`,
+  statusAgendamento: (id) => `/api/agendamentos/${id}/status`,
+  encaixe: "/api/agendamentos/encaixe",
+  alocarAgendamento: (id) => `/api/agendamentos/${id}/alocar`,
+  chegadaAgendamento: (id) => `/api/agendamentos/${id}/chegada`,
 };
+

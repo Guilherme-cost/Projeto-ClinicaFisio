@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ToastProvider from "./components/ToastProvider";
 import Login from "./pages/Login";
 import PrivateRoute from "./components/PrivateRoute";
+import FilaDia from "./pages/FilaDia";
 import Avisos from "./pages/Avisos";
 import Layout from "./components/Layout";
 import Documentos from "./pages/Documentos";
@@ -20,9 +21,10 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
 
-             <Route element={<PrivateRoute />}>
-             <Route element={<Layout />}>
+          <Route element={<PrivateRoute />}>
+            <Route element={<Layout />}>
               <Route path="/agendamentos" element={<Agendamentos />} />
+              <Route path="/fila-dia" element={<FilaDia />} />
               <Route path="/fila-de-espera" element={<FilaEspera />} />
               <Route path="/pacientes" element={<Pacientes />} />
               <Route path="/estoque" element={<Pagina titulo="Estoque" />} />
@@ -32,6 +34,8 @@ function App() {
               <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
           </Route>
+
+          <Route path="*" element={<Navigate to="/login" replace />} /> {/* NOVO */}
         </Routes>
       </BrowserRouter>
     </ToastProvider>

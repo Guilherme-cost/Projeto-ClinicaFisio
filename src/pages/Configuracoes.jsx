@@ -13,7 +13,7 @@ const ABAS = [
   { id: "procedimentos", nome: "Procedimentos" },
   { id: "grupos", nome: "Grupos" },
   { id: "usuarios", nome: "Usuários" },
-  { id: "professores", nome: "Professores" },
+  { id: "professores", nome: "Profissionais" },
   { id: "especialidades", nome: "Especialidades" },
   { id: "modelos", nome: "Modelos" },
 ];

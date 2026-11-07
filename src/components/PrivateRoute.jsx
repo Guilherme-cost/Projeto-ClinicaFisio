@@ -6,7 +6,8 @@ export default function PrivateRoute() {
   const local = useLocation();
 
   if (!estaAutenticado) {
-    return <Navigate to="/login" replace state={{ de: local.pathname }} />;
+    const de = local.pathname + local.search + local.hash;
+    return <Navigate to="/login" replace state={{ de }} />;
   }
   return <Outlet />;
 }
