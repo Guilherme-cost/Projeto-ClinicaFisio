@@ -19,11 +19,12 @@ export const CADASTROS = {
     ],
   },
 
+  // A chave continua "professores" (a tela e o serviço usam ela); só os textos mudaram.
   professores: {
-    titulo: "Professores",
+    titulo: "Profissionais",
     subtitulo: "Profissionais que realizam os atendimentos.",
-    singular: "professor",
-    novo: "Novo Professor",
+    singular: "profissional",
+    novo: "Novo Profissional",
     campos: (esp) => [
       { chave: "nome", rotulo: "Nome completo", obrigatorio: true },
       { chave: "registro", rotulo: "Registro profissional", placeholder: "CREFITO-0 000000-F" },
@@ -31,9 +32,11 @@ export const CADASTROS = {
       { chave: "especialidadeId", rotulo: "Especialidade", tipo: "select", opcoes: opcoesEspecialidade(esp), obrigatorio: true },
     ],
     colunas: (esp) => [
-      { rotulo: "Professor", valor: (p) => p.nome, destaque: true },
+      { rotulo: "Profissional", valor: (p) => p.nome, destaque: true },
       { rotulo: "Registro", valor: (p) => p.registro || "—" },
       { rotulo: "Especialidade", valor: (p) => nomeDe(esp, p.especialidadeId) },
+      { rotulo: "Horários", valor: (p) => p.resumoHorarios || "—" },
+      { rotulo: "Descanso", valor: (p) => (p.descansoMinutos == null ? "—" : p.descansoMinutos === 0 ? "Sem descanso" : `${p.descansoMinutos} min`) },
     ],
   },
 

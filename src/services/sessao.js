@@ -47,3 +47,14 @@ export function consumirAviso() {
   sessionStorage.removeItem(CHAVE_AVISO);
   return valor;
 }
+
+// NOVO: só espia se há aviso pendente, sem consumir (o Login é quem consome).
+export function temAvisoPendente() {
+  return sessionStorage.getItem(CHAVE_AVISO) !== null;
+}
+
+// NOVO: o usuário clicou em "Sair". O PrivateRoute usa isso para ir ao /login (e não à
+// apresentação). O Login consome a marca e não mostra nenhum aviso para ela.
+export function marcarSaida() {
+  sessionStorage.setItem(CHAVE_AVISO, "saiu");
+}

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { LuPencil, LuPower, LuPlus } from "react-icons/lu";
+import { LuClock, LuPencil, LuPower, LuPlus } from "react-icons/lu";
+import AgendamentoModal from "../../components/AgendamentoModal";
 import FormModal from "../../components/FormModal";
+import HorariosModal from "../../components/HorariosModal";
+import PendenciasProfissionalModal from "../../components/PendenciasProfissionalModal";
 import { useToast } from "../../components/toastContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { PESO_MINIMO, temPeso } from "../../config/permissoes";
@@ -9,6 +12,9 @@ import {
   salvarCadastro,
   alternarStatusCadastro,
 } from "../../services/cadastrosService";
+import { salvarAgendamento } from "../../services/agendamentosService";
+import { completarComMock } from "../../services/horariosTrabalhoService";
+import { agendamentosPendentesDoProfissional } from "../../services/pendenciasService";
 import { CADASTROS } from "./cadastrosConfig";
 
 function AbaCadastro({ entidade }) {
@@ -20,11 +26,21 @@ function AbaCadastro({ entidade }) {
   const [especialidades, setEspecialidades] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modal, setModal] = useState(null); // { item } ou null
+  const [horarios, setHorarios] = useState(null); // { profissional } ou null
+  const [pendencias, setPendencias] = useState(null); // { profissional, agendamentos } ou null
+  const [reagendando, setReagendando] = useState(null); // agendamento sendo remarcado
+  const [desativando, setDesativando] = useState(false);
+
+  // "professores" é a chave da tela; na API são os profissionais
+  const ehProfissionais = entidade === "professores";
 
   // Criar e editar especialidade exige um peso mínimo (a API é quem bloqueia de verdade)
   const restrito =
     entidade === "especialidades" && !temPeso(usuario, PESO_MINIMO.criarEspecialidade);
   const dicaRestrito = "Seu perfil não pode criar ou editar especialidades.";
+
+  // Só quem tem o peso mínimo altera os horários; os demais veem em modo leitura
+  const horariosSomenteLeitura = !temPeso(usuario, PESO_MINIMO.gerenciarHorarios);
 
   async function carregar() {
     try {
@@ -32,7 +48,9 @@ function AbaCadastro({ entidade }) {
         listarCadastro(entidade),
         listarCadastro("especialidades"),
       ]);
-      setItens(lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
+      const ordenada = lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      // Mock: completa "Horários" e "Descanso" até a API devolver esses campos
+      setItens(ehProfissionais ? ordenada.map((p) => ({ ...p, ...completarComMock(p) })) : ordenada);
       setEspecialidades(esp);
     } catch (e) {
       toast.erro(e.message);
@@ -54,13 +72,66 @@ function AbaCadastro({ entidade }) {
     toast.sucesso("Cadastro salvo.");
   }
 
+  // Profissional com agendamentos pela frente não pode ser desativado: mostra a lista para reagendar.
+  // Devolve true se abriu a lista.
+  async function abrirPendencias(item) {
+    const agendamentos = await agendamentosPendentesDoProfissional(item.id);
+    if (agendamentos.length === 0) return false;
+    setPendencias({ profissional: item, agendamentos });
+    return true;
+  }
+
+  async function desativar(item) {
+    await alternarStatusCadastro(entidade, item);
+    await carregar();
+    toast.sucesso("Cadastro desativado.");
+  }
+
   async function alternarStatus(item) {
     try {
-      await alternarStatusCadastro(entidade, item);
-      await carregar();
-      toast.sucesso(item.ativo ? "Cadastro desativado." : "Cadastro reativado.");
+      if (ehProfissionais && item.ativo) {
+        if (await abrirPendencias(item)) return;
+      }
+
+      if (!item.ativo) {
+        await alternarStatusCadastro(entidade, item);
+        await carregar();
+        toast.sucesso("Cadastro reativado.");
+        return;
+      }
+
+      await desativar(item);
+    } catch (e) {
+      // A API também recusa (409) caso apareça um agendamento depois da conferência da tela
+      if (ehProfissionais && e.codigo === "PROFISSIONAL_COM_AGENDAMENTOS") {
+        try {
+          if (await abrirPendencias(item)) return;
+        } catch {
+          // cai no aviso abaixo
+        }
+      }
+      toast.erro(e.message);
+    }
+  }
+
+  // Depois de remarcar, confere de novo quantos ainda faltam
+  async function salvarReagendamento(dados) {
+    await salvarAgendamento(dados);
+    setReagendando(null);
+    toast.sucesso("Agendamento remarcado.");
+    const agendamentos = await agendamentosPendentesDoProfissional(pendencias.profissional.id);
+    setPendencias((p) => (p ? { ...p, agendamentos } : p));
+  }
+
+  async function confirmarDesativar() {
+    setDesativando(true);
+    try {
+      await desativar(pendencias.profissional);
+      setPendencias(null);
     } catch (e) {
       toast.erro(e.message);
+    } finally {
+      setDesativando(false);
     }
   }
 
@@ -116,6 +187,17 @@ function AbaCadastro({ entidade }) {
                 </td>
                 <td className="col-acoes">
                   <div className="acoes">
+                    {ehProfissionais && (
+                      <button
+                        className="acao horarios"
+                        title={item.ativo ? "Horários de trabalho" : "Ative o profissional para editar os horários"}
+                        aria-label={`Horários de trabalho de ${item.nome}`}
+                        disabled={!item.ativo}
+                        onClick={() => setHorarios({ profissional: item })}
+                      >
+                        <LuClock />
+                      </button>
+                    )}
                     <button
                       className="acao editar"
                       title={restrito ? dicaRestrito : "Editar"}
@@ -148,6 +230,37 @@ function AbaCadastro({ entidade }) {
           inicial={modal.item}
           onSalvar={salvar}
           onFechar={() => setModal(null)}
+        />
+      )}
+
+      {pendencias && (
+        <PendenciasProfissionalModal
+          profissional={pendencias.profissional}
+          agendamentos={pendencias.agendamentos}
+          desativando={desativando}
+          onReagendar={setReagendando}
+          onDesativar={confirmarDesativar}
+          onFechar={() => setPendencias(null)}
+        />
+      )}
+
+      {reagendando && (
+        <AgendamentoModal
+          key={reagendando.id}
+          agendamento={reagendando}
+          dataInicial={reagendando.data}
+          onSalvar={salvarReagendamento}
+          onFechar={() => setReagendando(null)}
+        />
+      )}
+
+      {horarios && (
+        <HorariosModal
+          key={horarios.profissional.id}
+          profissional={horarios.profissional}
+          somenteLeitura={horariosSomenteLeitura}
+          onSalvo={carregar}
+          onFechar={() => setHorarios(null)}
         />
       )}
     </>

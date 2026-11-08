@@ -31,6 +31,8 @@ const ENTIDADES = {
       telefone: x.telefone ?? "",
       especialidadeId: x.idEspecialidade,
       ativo: ativoDe(x),
+      resumoHorarios: x.resumoHorarios ?? null,
+      descansoMinutos: x.descansoMinutos ?? null,
     }),
     corpoDe: (d) => ({
       nome: d.nome.trim(),

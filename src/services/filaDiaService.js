@@ -90,7 +90,7 @@ function agendaDoDia(prof, data) {
   }));
   const extras = alocados
     .filter((a) => a.idProfissional === prof.id && a.data === data)
-    .map((a) => ({ ...a, status: "Aguardando", encaixe: true }));
+    .map((a) => ({ ...a }));
   return [...base, ...extras].sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
@@ -175,7 +175,7 @@ export async function obterFila(data) {
   const agora = horaAgoraSP();
 
   const profissionais = trabalha ? PROFISSIONAIS.map((p) => montarItens(p, data, hoje, agora)) : [];
-  const semMedico = trabalha ? semMedicoAtual : [];
+  const semMedico = semMedicoAtual;
 
   return { data, idGrupo: null, resumo: montarResumo(profissionais, semMedico), semMedico, profissionais };
 }
@@ -186,18 +186,13 @@ export async function listarProcedimentos() {
   return PROCEDIMENTOS.map((p) => ({ ...p }));
 }
 
-// Põe um paciente de "Sem médico" em um horário do profissional.
-// O servidor vai conferir de novo (outra pessoa pode ter ocupado o horário nesse meio tempo).
-export async function alocarEncaixe({ idEncaixe, idProfissional, data, inicio, idProcedimento }) {
-  await espera(250);
-
-  const encaixe = semMedicoAtual.find((s) => s.id === idEncaixe);
-  const prof = PROFISSIONAIS.find((p) => p.id === idProfissional);
-  const proc = PROCEDIMENTOS.find((p) => p.id === idProcedimento);
-  if (!encaixe || !prof || !proc) throw new Error("Esse paciente não está mais em \"Sem médico\".");
+// Mesmas regras que a API vai aplicar ao marcar (horário que passou, fora do bloco, ocupado)
+function validarEspaco(prof, data, inicio, duracao) {
+  const hoje = hojeSP();
+  if (data < hoje || (data === hoje && inicio < horaAgoraSP())) throw new Error("Esse horário já passou.");
 
   const ini = horaParaMin(inicio);
-  const fim = ini + proc.duracaoMinutos;
+  const fim = ini + duracao;
 
   const dentro = prof.blocos.some((b) => ini >= horaParaMin(b.inicio) && fim <= horaParaMin(b.fim));
   if (!dentro) throw new Error("O atendimento passaria do horário de trabalho do profissional.");
@@ -209,6 +204,25 @@ export async function alocarEncaixe({ idEncaixe, idProfissional, data, inicio, i
       horaParaMin(a.inicio) < fim
   );
   if (ocupado) throw new Error("Esse horário acabou de ser ocupado. Escolha outro.");
+}
+
+function buscarProfissionalEProcedimento(idProfissional, idProcedimento) {
+  const prof = PROFISSIONAIS.find((p) => p.id === idProfissional);
+  const proc = PROCEDIMENTOS.find((p) => p.id === idProcedimento);
+  if (!prof || !proc) throw new Error("Profissional ou procedimento inválido.");
+  return { prof, proc };
+}
+
+// Põe um paciente de "Sem médico" em um horário do profissional.
+// O servidor vai conferir de novo (outra pessoa pode ter ocupado o horário nesse meio tempo).
+export async function alocarEncaixe({ idEncaixe, idProfissional, data, inicio, idProcedimento }) {
+  await espera(250);
+
+  const encaixe = semMedicoAtual.find((s) => s.id === idEncaixe);
+  if (!encaixe) throw new Error("Esse paciente não está mais em \"Sem médico\".");
+  const { prof, proc } = buscarProfissionalEProcedimento(idProfissional, idProcedimento);
+
+  validarEspaco(prof, data, inicio, proc.duracaoMinutos);
 
   alocados.push({
     id: ++proximoId,
@@ -220,8 +234,46 @@ export async function alocarEncaixe({ idEncaixe, idProfissional, data, inicio, i
     procedimento: proc.nome,
     duracao: proc.duracaoMinutos,
     chegadaEm: encaixe.chegadaEm,
+    status: "Aguardando", // já chegou
+    encaixe: true,
   });
   semMedicoAtual = semMedicoAtual.filter((s) => s.id !== idEncaixe);
+}
+
+// Agenda um paciente (que não está em "Sem médico") em um espaço livre.
+export async function agendarNoEspaco({ idPaciente, paciente, idProfissional, data, inicio, idProcedimento }) {
+  await espera(250);
+
+  if (!idPaciente) throw new Error("Selecione o paciente.");
+  const { prof, proc } = buscarProfissionalEProcedimento(idProfissional, idProcedimento);
+
+  validarEspaco(prof, data, inicio, proc.duracaoMinutos);
+
+  alocados.push({
+    id: ++proximoId,
+    idPaciente,
+    idProfissional,
+    data,
+    inicio,
+    paciente,
+    procedimento: proc.nome,
+    duracao: proc.duracaoMinutos,
+    chegadaEm: null,
+    status: "Agendado",
+    encaixe: false,
+  });
+}
+
+// Paciente que chegou sem horário: entra em "Sem médico" com a hora de chegada de agora (SP).
+export async function criarEncaixe({ idPaciente, paciente, motivo }) {
+  await espera(250);
+
+  if (!idPaciente) throw new Error("Selecione o paciente.");
+  if (semMedicoAtual.some((s) => s.idPaciente === idPaciente)) {
+    throw new Error("Esse paciente já está em \"Sem médico\".");
+  }
+
+  semMedicoAtual = [...semMedicoAtual, { id: ++proximoId, idPaciente, paciente, motivo, chegadaEm: horaAgoraSP() }];
 }
 
 // QUANDO A API ESTIVER PRONTA:
@@ -240,5 +292,11 @@ export async function alocarEncaixe({ idEncaixe, idProfissional, data, inicio, i
 //       method: "POST",
 //       corpo: { data, hora: inicio, idProfissional, idProcedimento },
 //     });
+//
+//   agendarNoEspaco(...):
+//     return api(ROTAS.agendamentos, { method: "POST", corpo: { inicio: `${data}T${inicio}:00`, idPaciente, idProfissional, idProcedimento } });
+//
+//   criarEncaixe(...):
+//     return api(ROTAS.encaixe, { method: "POST", corpo: { idPaciente, motivo } });
 //
 //   listarProcedimentos(): trocar pelas opções reais (agendamentosOpcoes), que já trazem a duração.

@@ -1,0 +1,200 @@
+.hr-modal { max-height: 92vh; overflow-y: auto; }
+
+.hr-carregando,
+.hr-aviso {
+  margin: 12px 0;
+  font-size: 14px;
+  color: #3f4f5f;
+}
+
+.hr-aviso {
+  padding: 9px 12px;
+  color: #7a4a05;
+  background: #fff8ea;
+  border: 1px solid #d97706;
+  border-left-width: 4px;
+  border-radius: 4px;
+}
+
+/* ---------- Descanso ---------- */
+.hr-descansos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.hr-descansos button {
+  height: 38px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3f4f5f;
+  background: #f1f5fa;
+  border: 2px solid #dbe3ec;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hr-descansos button.marcado {
+  color: #1d5a9a;
+  background: #eef5fc;
+  border-color: #2f80c4;
+}
+
+.hr-descansos button:disabled { cursor: default; opacity: 0.7; }
+
+/* ---------- Dias da semana ---------- */
+.hr-dias {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.hr-dia {
+  padding: 10px 12px;
+  background: #f5f8fb;
+  border: 1px solid #e1e8f0;
+  border-left: 4px solid #cdd9e6;
+  border-radius: 6px;
+}
+
+.hr-dia.ativo { background: #fff; border-left-color: #2f80c4; }
+
+.hr-dia-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hr-atende {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #12263a;
+  cursor: pointer;
+}
+
+.hr-atende input { width: 18px; height: 18px; accent-color: #2f80c4; }
+.hr-total { font-size: 13px; color: #5b6b7b; }
+
+.hr-blocos { margin-top: 8px; }
+
+.hr-bloco {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: #5b6b7b;
+}
+
+.hr-bloco input[type="time"] {
+  height: 36px;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #12263a;
+  background: #fff;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+}
+
+.hr-bloco input[type="time"]:focus-visible { outline: 3px solid rgba(28, 111, 184, 0.3); border-color: #2f80c4; }
+.hr-bloco input:disabled { background: #f1f5fa; }
+
+.hr-remover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  color: #991b1b;
+  background: #fff;
+  border: 1px solid #e6b3b3;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hr-dia-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hr-dia-acoes button,
+.hr-copia button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c6fb8;
+  background: #eaf3fb;
+  border: 1px solid #cfe2f3;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hr-copia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #eef5fc;
+  border: 1px dashed #b7c8da;
+  border-radius: 6px;
+}
+
+.hr-copia label { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #12263a; }
+.hr-copia button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hr-resumo { margin: 12px 0 0; font-size: 14px; color: #5b6b7b; }
+.hr-resumo b { color: #12263a; }
+
+/* ---------- Conflitos com agendamentos (409) ---------- */
+.hr-conflitos {
+  margin-top: 14px;
+  padding: 10px 14px;
+  color: #991b1b;
+  background: #fdecec;
+  border: 1px solid #dc2626;
+  border-left-width: 4px;
+  border-radius: 4px;
+}
+
+.hr-conflitos p { margin: 2px 0 8px; font-size: 13px; }
+
+.hr-conflitos ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hr-conflitos li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: #3f4f5f;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.hr-conflitos li b { color: #12263a; }
+.hr-conflitos li em { font-style: normal; font-size: 12px; color: #991b1b; }
+
+@media (max-width: 600px) {
+  .hr-descansos { grid-template-columns: repeat(2, 1fr); }
+  .hr-conflitos li { grid-template-columns: 1fr; }
+}

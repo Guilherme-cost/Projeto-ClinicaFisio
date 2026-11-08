@@ -12,13 +12,15 @@ import FilaEspera from "./pages/FilaEspera";
 import Configuracoes from "./pages/Configuracoes";
 import Dashboard from "./pages/Dashboard";
 import Agendamentos from "./pages/Agendamentos";
+import Landing from "./pages/Landing/Landing";
 
 function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* Primeira tela do site: apresentação. Quem já está logado é enviado ao sistema pela própria Landing. */}
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
 
           <Route element={<PrivateRoute />}>
@@ -35,7 +37,8 @@ function App() {
             </Route>
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} /> {/* NOVO */}
+          {/* Endereço que não existe: volta para a apresentação */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>

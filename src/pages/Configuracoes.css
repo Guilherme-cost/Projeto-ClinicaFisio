@@ -241,3 +241,6 @@
   font-weight: 600;
   color: #12263a;
 }
+
+.acao.horarios { color: #1d5a9a; background: #e3effa; }
+.acao.horarios:hover:not(:disabled) { background: #d3e5f7; }

@@ -2,10 +2,11 @@ import { API_URL } from "../config/env";
 import { lerSessao, limparSessao } from "./sessao";
 
 export class ApiError extends Error {
-  constructor(mensagem, status = 0, codigo = null) {
+  constructor(mensagem, status = 0, codigo = null, dados = null) {
     super(mensagem);
     this.status = status;
     this.codigo = codigo;
+    this.dados = dados; // corpo completo do erro (ex.: lista do 409)
   }
 }
 
@@ -42,8 +43,7 @@ export async function api(caminho, { method = "GET", corpo } = {}) {
       limparSessao();
       window.dispatchEvent(new Event("auth:expirou"));
     }
-    throw new ApiError(extrairMensagem(dados, resposta.status), resposta.status, dados?.codigo ?? null);
-  }
+throw new ApiError(extrairMensagem(dados, resposta.status), resposta.status, dados?.codigo ?? null, dados);  }
 
   return dados;
 }

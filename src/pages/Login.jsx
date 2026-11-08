@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { consumirAviso } from "../services/sessao";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useToast } from "../components/toastContext";
 import CampoSenha from "../components/CampoSenha";
 import { useAuth } from "../contexts/AuthContext";
@@ -94,10 +94,16 @@ function Login() {
   return (
     <div className="login-page">
       <section className="login-hero">
-        <div className="hero-logo">
+        {/* A logo leva de volta à apresentação */}
+        <Link
+          to="/"
+          className="hero-logo"
+          style={{ textDecoration: "none", color: "inherit" }}
+          aria-label="Voltar à apresentação do FisioCore"
+        >
           <span className="logo-nome">FisioCore</span>
           <span className="logo-sub">Gestão de clínica</span>
-        </div>
+        </Link>
 
         <div className="hero-texto">
           <h2>Tudo para a sua clínica de fisioterapia em um só lugar.</h2>

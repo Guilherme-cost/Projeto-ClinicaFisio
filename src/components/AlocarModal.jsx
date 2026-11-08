@@ -2,32 +2,45 @@ import { useEffect, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useToast } from "./toastContext";
 import { listarProcedimentos } from "../services/filaDiaService";
+import { listarPacientes } from "../services/pacientesService";
 import { horaParaMin, minParaHora, rotuloDuracao } from "../utils/relogioSP";
 
 const PASSO_MINUTOS = 5; // de quanto em quanto tempo o atendimento pode começar
 
-// Horários de início em que o procedimento cabe inteiro dentro do espaço livre
-function iniciosDe(livre, procedimento) {
+// Horários de início em que o procedimento cabe inteiro no espaço livre,
+// sem começar antes de "aPartirDe" (hora que já passou não pode ser marcada).
+function iniciosDe(livre, procedimento, aPartirDe) {
   const lista = [];
   const fim = horaParaMin(livre.fim);
-  for (let m = horaParaMin(livre.inicio); m + procedimento.duracaoMinutos <= fim; m += PASSO_MINUTOS) {
+  for (
+    let m = Math.max(horaParaMin(livre.inicio), horaParaMin(aPartirDe));
+    m + procedimento.duracaoMinutos <= fim;
+    m += PASSO_MINUTOS
+  ) {
     lista.push(minParaHora(m));
   }
   return lista;
 }
 
-function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
+// Com "encaixe": aloca quem já está em "Sem médico". Sem "encaixe": agenda um paciente escolhido aqui.
+function AlocarModal({ encaixe, prof, livre, aPartirDe = "00:00", onSalvar, onFechar }) {
   const toast = useToast();
+  const novo = !encaixe;
+
   const [procedimentos, setProcedimentos] = useState(null);
+  const [pacientes, setPacientes] = useState(null);
+  const [idPaciente, setIdPaciente] = useState("");
   const [idProc, setIdProc] = useState("");
   const [hora, setHora] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
-    listarProcedimentos()
-      .then((lista) => {
-        if (!cancelado) setProcedimentos(lista);
+    Promise.all([listarProcedimentos(), novo ? listarPacientes() : Promise.resolve(null)])
+      .then(([procs, pacs]) => {
+        if (cancelado) return;
+        setProcedimentos(procs);
+        if (pacs) setPacientes(pacs.filter((p) => p.ativo));
       })
       .catch((e) => {
         if (cancelado) return;
@@ -41,23 +54,29 @@ function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
   }, []);
 
   const procedimento = procedimentos?.find((p) => p.id === Number(idProc));
-  const inicios = procedimento ? iniciosDe(livre, procedimento) : [];
+  const inicios = procedimento ? iniciosDe(livre, procedimento, aPartirDe) : [];
   const fimPrevisto = procedimento && hora ? minParaHora(horaParaMin(hora) + procedimento.duracaoMinutos) : null;
+  const carregando = !procedimentos || (novo && !pacientes);
 
   function escolherProcedimento(valor) {
     setIdProc(valor);
     const p = procedimentos.find((x) => x.id === Number(valor));
     // Já deixa selecionado o primeiro horário possível
-    setHora(p ? (iniciosDe(livre, p)[0] ?? "") : "");
+    setHora(p ? (iniciosDe(livre, p, aPartirDe)[0] ?? "") : "");
   }
 
   async function enviar(evento) {
     evento.preventDefault();
-    if (!procedimento || !hora) return;
+    if (!procedimento || !hora || (novo && !idPaciente)) return;
 
     setSalvando(true);
     try {
-      await onSalvar({ idProcedimento: procedimento.id, inicio: hora });
+      const dados = { idProcedimento: procedimento.id, inicio: hora };
+      if (novo) {
+        dados.idPaciente = Number(idPaciente);
+        dados.paciente = pacientes.find((p) => p.id === Number(idPaciente))?.nome ?? "";
+      }
+      await onSalvar(dados);
     } catch (erro) {
       toast.erro(erro.message);
       setSalvando(false);
@@ -69,8 +88,8 @@ function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
       <div className="modal" role="dialog" aria-modal="true">
         <div className="modal-topo">
           <div>
-            <h3>Alocar paciente</h3>
-            <p>Escolha o procedimento e o horário de início</p>
+            <h3>{novo ? "Agendar paciente" : "Alocar paciente"}</h3>
+            <p>Escolha {novo ? "o paciente, " : ""}o procedimento e o horário de início</p>
           </div>
           <button type="button" className="modal-fechar" onClick={onFechar} aria-label="Fechar">
             <LuX />
@@ -81,10 +100,12 @@ function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
 
         <form onSubmit={enviar} noValidate>
           <dl className="fd-modal-resumo">
-            <div>
-              <dt>Paciente</dt>
-              <dd>{encaixe.paciente}</dd>
-            </div>
+            {!novo && (
+              <div>
+                <dt>Paciente</dt>
+                <dd>{encaixe.paciente}</dd>
+              </div>
+            )}
             <div>
               <dt>Profissional</dt>
               <dd>{prof.nome}</dd>
@@ -98,17 +119,34 @@ function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
           </dl>
 
           <div className="filtro-corpo">
+            {novo && (
+              <div className="campo">
+                <label htmlFor="al-pac">Paciente</label>
+                <select
+                  id="al-pac"
+                  value={idPaciente}
+                  disabled={carregando}
+                  onChange={(e) => setIdPaciente(e.target.value)}
+                >
+                  <option value="">{carregando ? "Carregando..." : "Selecione..."}</option>
+                  {(pacientes ?? []).map((p) => (
+                    <option key={p.id} value={p.id}>{p.nome}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="campo">
               <label htmlFor="al-proc">Procedimento</label>
               <select
                 id="al-proc"
                 value={idProc}
-                disabled={!procedimentos}
+                disabled={carregando}
                 onChange={(e) => escolherProcedimento(e.target.value)}
               >
-                <option value="">{procedimentos ? "Selecione..." : "Carregando..."}</option>
+                <option value="">{carregando ? "Carregando..." : "Selecione..."}</option>
                 {(procedimentos ?? []).map((p) => {
-                  const cabe = p.duracaoMinutos <= livre.minutos;
+                  const cabe = iniciosDe(livre, p, aPartirDe).length > 0;
                   return (
                     <option key={p.id} value={p.id} disabled={!cabe}>
                       {p.nome} ({rotuloDuracao(p.duracaoMinutos)}){cabe ? "" : " · não cabe neste espaço"}
@@ -134,8 +172,12 @@ function AlocarModal({ encaixe, prof, livre, onSalvar, onFechar }) {
 
           <div className="modal-rodape">
             <button type="button" className="btn-secundario" onClick={onFechar}>Cancelar</button>
-            <button type="submit" className="btn-primario" disabled={salvando || !procedimento || !hora}>
-              Alocar
+            <button
+              type="submit"
+              className="btn-primario"
+              disabled={salvando || !procedimento || !hora || (novo && !idPaciente)}
+            >
+              {novo ? "Agendar" : "Alocar"}
             </button>
           </div>
         </form>

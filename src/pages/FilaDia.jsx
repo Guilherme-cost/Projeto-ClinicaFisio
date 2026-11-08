@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronLeft, LuChevronRight, LuPlus, LuSearch } from "react-icons/lu";
 import Folha from "../components/Folha";
 import AlocarModal from "../components/AlocarModal";
+import EncaixeModal from "../components/EncaixeModal";
 import { useToast } from "../components/toastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { ehProfissional } from "../config/permissoes";
-import { alocarEncaixe, obterFila } from "../services/filaDiaService";
-import { hojeSP, rotuloDia, rotuloDuracao, somarDiasISO } from "../utils/relogioSP";
+import { agendarNoEspaco, alocarEncaixe, criarEncaixe, obterFila } from "../services/filaDiaService";
+import { horaAgoraSP, horaParaMin, hojeSP, minParaHora, rotuloDia, rotuloDuracao, somarDiasISO } from "../utils/relogioSP";
 import "./Pacientes.css"; // reaproveita o visual dos modais
 import "./FilaDia.css";
 
@@ -127,10 +128,9 @@ function EspacoLivre({ livre, podeAgendar, emDestaque, aceitaSoltar, sobre, temS
         <button
           type="button"
           className={`fd-mais ${temSelecionado ? "pronto" : ""}`}
-          disabled={!temSelecionado}
           onClick={aoClicarMais}
-          title={temSelecionado ? "Alocar o paciente selecionado aqui" : "Para agendar direto, aguarde o próximo passo"}
-          aria-label={`Alocar às ${livre.inicio}`}
+          title={temSelecionado ? "Alocar o paciente selecionado aqui" : "Agendar um paciente neste espaço"}
+          aria-label={`${temSelecionado ? "Alocar" : "Agendar"} às ${livre.inicio}`}
         >
           <LuPlus />
         </button>
@@ -165,7 +165,8 @@ function FilaDia() {
   const [arrastando, setArrastando] = useState(null); // id do paciente sendo arrastado
   const [selecionado, setSelecionado] = useState(null); // id do paciente escolhido por clique
   const [sobre, setSobre] = useState(null); // espaço livre sob o cursor durante o arraste
-  const [alocacao, setAlocacao] = useState(null); // { encaixe, prof, livre }
+  const [alocacao, setAlocacao] = useState(null); // { encaixe (ou null = agendar novo), prof, livre, aPartirDe }
+  const [novoEncaixe, setNovoEncaixe] = useState(false);
 
   // "silencioso": atualiza sem trocar o quadro por "Carregando..."
   const carregar = useCallback(
@@ -220,19 +221,43 @@ function FilaDia() {
     return prof.itens.filter((i) => (buscando ? i.tipo === "agendamento" && normalizar(i.paciente).includes(termo) : true));
   }
 
+  // Primeiro horário que ainda pode ser marcado (hora que já passou não pode)
+  function calcularAPartirDe() {
+    const hoje = hojeSP();
+    if (data < hoje) return "24:00"; // dia passado: nada disponível
+    if (data > hoje) return "00:00";
+    return minParaHora(Math.ceil(horaParaMin(horaAgoraSP()) / 5) * 5);
+  }
+
+  // Com idEncaixe: aloca quem está em "Sem médico". Sem idEncaixe: agenda um paciente novo no espaço.
   function abrirAlocacao(prof, livre, idEncaixe) {
-    const encaixe = (fila?.semMedico ?? []).find((s) => s.id === idEncaixe);
+    const encaixe = idEncaixe != null ? (fila?.semMedico ?? []).find((s) => s.id === idEncaixe) : null;
     setArrastando(null);
     setSobre(null);
     setSelecionado(null);
-    if (encaixe) setAlocacao({ encaixe, prof, livre });
+    if (idEncaixe != null && !encaixe) return; // o paciente saiu da lista nesse meio tempo
+    setAlocacao({ encaixe, prof, livre, aPartirDe: calcularAPartirDe() });
   }
 
-  async function confirmarAlocacao({ idProcedimento, inicio }) {
+  async function confirmarAlocacao(dados) {
     const { encaixe, prof } = alocacao;
-    await alocarEncaixe({ idEncaixe: encaixe.id, idProfissional: prof.id, data, inicio, idProcedimento });
+
+    if (encaixe) {
+      await alocarEncaixe({ idEncaixe: encaixe.id, idProfissional: prof.id, data, ...dados });
+      toast.sucesso(`${encaixe.paciente} foi alocado(a) às ${dados.inicio} com ${prof.nome}.`);
+    } else {
+      await agendarNoEspaco({ idProfissional: prof.id, data, ...dados });
+      toast.sucesso(`${dados.paciente} foi agendado(a) às ${dados.inicio} com ${prof.nome}.`);
+    }
+
     setAlocacao(null);
-    toast.sucesso(`${encaixe.paciente} foi alocado(a) às ${inicio} com ${prof.nome}.`);
+    await carregar(true);
+  }
+
+  async function confirmarEncaixe(dados) {
+    await criarEncaixe(dados);
+    setNovoEncaixe(false);
+    toast.sucesso(`${dados.paciente} entrou em "Sem médico".`);
     await carregar(true);
   }
 
@@ -267,9 +292,9 @@ function FilaDia() {
           <button
             type="button"
             className="fd-novo"
-            disabled
-            title="Encaixe e novo agendamento entram no próximo passo"
-            aria-label="Novo atendimento"
+            onClick={() => setNovoEncaixe(true)}
+            title="Novo encaixe (paciente que chegou sem horário)"
+            aria-label="Novo encaixe"
           >
             <LuPlus />
           </button>
@@ -312,9 +337,11 @@ function FilaDia() {
             </div>
           )}
 
-          {profissionais.length === 0 ? (
+          {profissionais.length === 0 && (
             <p className="fd-aviso">Nenhum profissional com horário de trabalho neste dia.</p>
-          ) : (
+          )}
+
+          {(profissionais.length > 0 || semMedico.length > 0) && (
             <div className="fd-quadro">
               {!soProprio && (
                 <Coluna titulo="Sem médico" resumo={`(${semMedico.length})`}>
@@ -384,10 +411,13 @@ function FilaDia() {
           encaixe={alocacao.encaixe}
           prof={alocacao.prof}
           livre={alocacao.livre}
+          aPartirDe={alocacao.aPartirDe}
           onSalvar={confirmarAlocacao}
           onFechar={() => setAlocacao(null)}
         />
       )}
+
+      {novoEncaixe && <EncaixeModal onSalvar={confirmarEncaixe} onFechar={() => setNovoEncaixe(false)} />}
     </Folha>
   );
 }

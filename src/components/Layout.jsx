@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LuCalendarDays,
   LuClock,
@@ -39,6 +39,7 @@ const maiusculo = (texto) => (texto ? String(texto).toUpperCase() : "—");
 function Layout() {
   const { usuario, sair } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const naoLidos = useNaoLidos();
   const escopo = useEscopo(); // grupo escolhido pelo Master (null = todos)
 
@@ -52,6 +53,12 @@ function Layout() {
   // Só aparece no menu o que o peso do usuário alcança
   const principalVisivel = menuPrincipal.filter((i) => podeVerTela(usuario, i.caminho));
   const adminVisivel = menuAdmin.filter((i) => podeVerTela(usuario, i.caminho));
+
+  // Sair leva direto ao login. (Para voltar à apresentação em vez do login, use navigate("/").)
+  function aoSair() {
+    sair();
+    navigate("/login", { replace: true });
+  }
 
   function renderItens(lista) {
     return lista.map((item) => (
@@ -98,7 +105,7 @@ function Layout() {
             Usuário: <strong>{maiusculo(usuario.nome)}</strong>
           </span>
           <span className="separador" />
-          <button className="btn-sair" onClick={sair}>
+          <button className="btn-sair" onClick={aoSair}>
             Sair
           </button>
         </div>
