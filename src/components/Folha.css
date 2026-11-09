@@ -13,15 +13,25 @@
   gap: 16px;
 }
 
+/* Título da folha — estilo editorial: grande, elegante e com destaque */
 .folha-topo h1 {
   margin: 0;
-  font-size: 26px;
-  color: #12263a;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.6px;
+  word-spacing: normal;
+  color: #0f3460;
 }
 
 .folha-topo p {
-  margin: 2px 0 0;
-  color: #5b6b7b;
+  max-width: 62ch;
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  color: #6b7d92;
 }
 
 /* Também usada nos modais */
@@ -31,6 +41,24 @@
   background: linear-gradient(90deg, #2f80c4, #0f3460);
 }
 
+/* na folha: linha fina até o final (nos modais continua a linha cheia, mais grossa) */
 .folha > .linha-degrade {
-  margin: 14px 0 18px;
+  height: 2px;
+  margin: 20px 0 22px;
+  background: linear-gradient(90deg, #2f80c4, #0f3460);
+}
+
+@media (max-width: 600px) {
+  .folha {
+    padding: 18px 16px;
+  }
+  .folha-topo {
+    flex-wrap: wrap;
+  }
+  .folha-topo h1 {
+    font-size: 27px;
+  }
+  .folha-topo p {
+    font-size: 14.5px;
+  }
 }

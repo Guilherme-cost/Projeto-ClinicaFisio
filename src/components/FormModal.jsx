@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useToast } from "./toastContext";
 
-function FormModal({ titulo, subtitulo, campos, inicial, largo = false, onSalvar, onFechar }) {
+function FormModal({ titulo, subtitulo, campos, inicial, largo = false, rotuloSalvar = "Salvar", onSalvar, onFechar }) {
   const toast = useToast();
 
   const [form, setForm] = useState(() => {
@@ -123,7 +123,7 @@ function FormModal({ titulo, subtitulo, campos, inicial, largo = false, onSalvar
 
           <div className="modal-rodape">
             <button type="button" className="btn-secundario" onClick={onFechar}>Cancelar</button>
-            <button type="submit" className="btn-primario" disabled={salvando}>Salvar</button>
+            <button type="submit" className="btn-primario" disabled={salvando}>{rotuloSalvar}</button>
           </div>
         </form>
       </div>

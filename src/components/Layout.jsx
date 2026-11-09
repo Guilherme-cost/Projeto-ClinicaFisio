@@ -6,6 +6,7 @@ import {
   LuUsers,
   LuPackage,
   LuBell,
+  LuMessageSquare,
   LuLayoutDashboard,
   LuFileText,
   LuSettings,
@@ -26,6 +27,7 @@ const menuPrincipal = [
   { nome: "Pacientes", icone: <LuUsers />, caminho: "/pacientes" },
   { nome: "Estoque", icone: <LuPackage />, caminho: "/estoque" },
   { nome: "Avisos", icone: <LuBell />, caminho: "/avisos" },
+  { nome: "Chat", icone: <LuMessageSquare />, caminho: "/chat" },
 ];
 
 const menuAdmin = [

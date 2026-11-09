@@ -1,218 +1,137 @@
-.login-page {
-  display: flex;
-  min-height: 100vh;
-}
+/* ==========================================================
+   Tela de login — FisioCore
+   Todas as classes usam o prefixo "lg-" (sem conflito com outras telas).
+   A página é "fixed" e ocupa exatamente a viewport: não há rolagem e o
+   body não é alterado. Requer a fonte 'Source Sans 3' (já usada no sistema).
+   ========================================================== */
 
-/* ---------- Painel esquerdo ---------- */
-.login-hero {
-  flex: 1;
-  padding: 56px 56px 32px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  color: #fff;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(96, 165, 250, 0.45), transparent 45%),
-    radial-gradient(circle at 85% 90%, rgba(14, 116, 144, 0.5), transparent 50%),
-    linear-gradient(160deg, #2f80c4 0%, #1d5a9a 45%, #0f3460 100%);
+.lg-page,.lg-page *,.lg-page *::before,.lg-page *::after{box-sizing:border-box;margin:0;padding:0}
+.lg-page{
+  --ink:#0a2036; --ink-2:#4a5d72; --muted:#7a8ca0; --line:#dfe8f3;
+  --navy-950:#051528; --navy-900:#071d36;
+  --blue-400:#5aa6ec; --blue-500:#2f80cf; --blue-600:#1f63a8;
+  --green:#52d68a; --orange:#f0a04a;
+  font-family:'Source Sans 3','Inter',system-ui,sans-serif;
+  color:#fff;background:var(--navy-950);-webkit-font-smoothing:antialiased;overflow:hidden;
 }
+.lg-page a{color:inherit;text-decoration:none}
+.lg-page svg{display:block}
+.lg-page button{font-family:inherit}
 
-.logo-nome {
-  display: block;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
+  .lg-i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-.logo-sub {
-  display: block;
-  font-size: 18px;
-  font-weight: 400;
-  opacity: 0.85;
-}
+  /* ================= PÁGINA (sem rolagem) ================= */
+  .lg-page{position:fixed;inset:0;z-index:0;display:grid;grid-template-columns:1.12fr .88fr;overflow:hidden;
+    background:
+      radial-gradient(760px 520px at 18% 8%,rgba(58,142,224,.42),transparent 65%),
+      radial-gradient(680px 520px at 92% 92%,rgba(32,120,190,.34),transparent 70%),
+      linear-gradient(160deg,#061a31 0%,#071d36 50%,#0a2f57 100%)}
+  .lg-page::before{content:"";position:absolute;inset:-72px;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:72px 72px;animation:lg-pan 26s linear infinite;
+    -webkit-mask-image:radial-gradient(ellipse 80% 70% at 35% 40%,#000,transparent);mask-image:radial-gradient(ellipse 80% 70% at 35% 40%,#000,transparent)}
+  .lg-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(10px)}
+  .lg-orb.lg-a{width:560px;height:560px;left:-140px;top:-160px;background:radial-gradient(circle,rgba(90,166,236,.38),transparent 68%);animation:lg-drift1 16s ease-in-out infinite}
+  .lg-orb.lg-b{width:520px;height:520px;right:-120px;bottom:-180px;background:radial-gradient(circle,rgba(47,128,207,.34),transparent 68%);animation:lg-drift2 19s ease-in-out infinite}
+  @keyframes lg-pan{to{transform:translate(72px,72px)}}
+  @keyframes lg-drift1{50%{transform:translate(90px,70px) scale(1.12)}}
+  @keyframes lg-drift2{50%{transform:translate(-80px,-60px) scale(1.1)}}
 
-.hero-texto h2 {
-  font-size: 34px;
-  line-height: 1.2;
-  margin: 0 0 16px;
-  max-width: 520px;
-}
+  /* topo */
+  .lg-top{position:absolute;z-index:6;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center;padding:30px 56px}
+  .lg-brand{display:flex;align-items:center;gap:12px}
+  .lg-mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(145deg,#4a9be8,#1b5a9e);display:grid;place-items:center;box-shadow:0 6px 18px rgba(47,128,207,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+  .lg-mark svg{width:21px;height:21px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .lg-brand b{display:block;font-size:24px;font-weight:700;letter-spacing:-.4px;line-height:1}
+  .lg-brand small{display:block;font-size:9.5px;letter-spacing:3.2px;text-transform:uppercase;color:#8fb6e0;font-weight:600;margin-top:4px}
+  .lg-back{display:inline-flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;color:#cfe3f8;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);transition:.2s}
+  .lg-back:hover{background:rgba(255,255,255,.14);color:#fff}
+  .lg-back .lg-i{width:16px;height:16px;transition:transform .2s}
+  .lg-back:hover .lg-i{transform:translateX(-3px)}
 
-.hero-texto p {
-  font-size: 16px;
-  line-height: 1.6;
-  max-width: 480px;
-  opacity: 0.9;
-  margin: 0;
-}
+  /* ================= PULSO (linha de batimento) ================= */
+  .lg-pulse{position:absolute;z-index:1;left:0;width:100%;bottom:150px;height:190px;pointer-events:none;
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 50%,transparent 70%);mask-image:linear-gradient(90deg,#000 0,#000 50%,transparent 70%)}
+  .lg-pulse svg{width:100%;height:100%;overflow:visible}
+  .lg-pulse path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+  .lg-pulse .lg-base{stroke:rgba(140,190,240,.2);stroke-width:2}
+  .lg-pulse .lg-beam{stroke:url(#lg-grad);stroke-width:3.2;stroke-dasharray:130 870;animation:lg-run 5s linear infinite;filter:drop-shadow(0 0 7px rgba(107,180,245,.95)) drop-shadow(0 0 18px rgba(90,166,236,.6))}
+  @keyframes lg-run{from{stroke-dashoffset:130}to{stroke-dashoffset:-870}}
 
-.login-hero footer {
-  font-size: 13px;
-  opacity: 0.8;
-}
+  /* ================= ESQUERDA ================= */
+  .lg-left{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:96px 40px 330px 72px}
+  .lg-eyebrow{display:inline-flex;align-items:center;gap:12px;font-size:13px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:#7fb6ee}
+  .lg-eyebrow::before{content:"";width:30px;height:2px;border-radius:2px;background:#5aa6ec}
+  h1{font-size:clamp(38px,4.7vw,68px);line-height:1.03;font-weight:700;letter-spacing:-2.4px;margin:20px 0 20px;max-width:680px;
+    background:linear-gradient(180deg,#fff 30%,#9cc9f4 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lg-lead{font-size:clamp(16px,1.35vw,20px);line-height:1.55;color:#aac3de;max-width:470px}
 
-/* ---------- Painel direito ---------- */
-.login-form-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-}
+  /* linha do tempo do dia */
+  .lg-axis{position:absolute;z-index:2;left:72px;right:40px;bottom:84px;height:62px}
+  .lg-axis .lg-line{position:absolute;left:0;right:0;top:12px;height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(140,190,240,.5),rgba(140,190,240,.16))}
+  .lg-axis .lg-tick{position:absolute;top:30px;transform:translateX(-50%);font-size:12.5px;font-weight:600;letter-spacing:.6px;color:#6f91b5}
+  .lg-dot{position:absolute;top:13px;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%) scale(0);animation:lg-pop .7s cubic-bezier(.2,1.4,.4,1) forwards}
+  .lg-dot.lg-ok{background:var(--green);box-shadow:0 0 14px rgba(82,214,138,.7)}
+  .lg-dot.lg-now{background:var(--orange);box-shadow:0 0 16px rgba(240,160,74,.85);width:18px;height:18px}
+  .lg-dot.lg-now::before,.lg-dot.lg-now::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--orange);animation:lg-ripple 2.4s ease-out infinite}
+  .lg-dot.lg-now::after{animation-delay:1.2s}
+  .lg-dot.lg-next{background:#0b2a4c;border:2px solid #6bb4f5;box-shadow:0 0 12px rgba(107,180,245,.45)}
+  @keyframes lg-pop{to{transform:translate(-50%,-50%) scale(1)}}
+  @keyframes lg-ripple{from{transform:scale(1);opacity:.9}to{transform:scale(3.1);opacity:0}}
+  .lg-agora{position:absolute;top:-24px;transform:translateX(-50%);font-size:11.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--orange);opacity:0;animation:lg-fadein .6s 1.4s forwards}
+  @keyframes lg-fadein{to{opacity:1}}
+  .lg-legend{position:absolute;right:0;top:-34px;display:flex;gap:18px;font-size:12.5px;color:#7f9cbd}
+  .lg-legend span{display:inline-flex;align-items:center;gap:7px}
+  .lg-legend i{width:8px;height:8px;border-radius:50%}
 
-.login-form {
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-}
+  /* ================= DIREITA (formulário) ================= */
+  .lg-right{position:relative;z-index:4;display:flex;align-items:center;justify-content:center;padding:80px 56px 70px 24px}
+  .lg-card{width:100%;max-width:448px;background:#fff;color:var(--ink);border-radius:28px;padding:44px 42px 38px;
+    box-shadow:0 50px 120px -20px rgba(0,0,0,.65),0 0 0 8px rgba(255,255,255,.06);animation:lg-rise .9s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes lg-rise{from{opacity:0;transform:translateY(26px) scale(.98)}}
+  .lg-badge{width:48px;height:48px;border-radius:14px;background:linear-gradient(150deg,#3a8ee0,#1f63a8);display:grid;place-items:center;margin-bottom:20px;box-shadow:0 12px 26px -8px rgba(31,99,168,.7)}
+  .lg-badge svg{width:25px;height:25px;fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+  .lg-card h2{font-size:34px;font-weight:700;letter-spacing:-1.1px;line-height:1.1}
+  .lg-card .lg-sub{font-size:16px;color:var(--ink-2);margin:10px 0 24px;line-height:1.5}
+  .lg-loadbar{height:3px;border-radius:2px;background:#e9f0f8;margin-bottom:22px;overflow:hidden;position:relative}
+  .lg-loadbar::after{content:"";position:absolute;inset:0;width:34%;border-radius:2px;background:linear-gradient(90deg,transparent,var(--blue-500),transparent);transform:translateX(-100%);opacity:0}
+  .lg-card.lg-loading .lg-loadbar::after{opacity:1;animation:lg-slide 1.1s ease-in-out infinite}
+  @keyframes lg-slide{to{transform:translateX(300%)}}
+  .lg-page label{display:block;font-size:12px;font-weight:700;letter-spacing:1.4px;color:#51657b;margin-bottom:8px}
+  .lg-field{position:relative;margin-bottom:18px}
+  .lg-field .lg-lead-i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#7f95ad;pointer-events:none;transition:color .2s}
+  .lg-field input{width:100%;height:54px;border-radius:14px;border:1.5px solid var(--line);background:#f3f7fc;padding:0 48px 0 46px;font:500 16px 'Source Sans 3',sans-serif;color:var(--ink);outline:none;transition:.2s}
+  .lg-field input::placeholder{color:#9db0c4;font-weight:400}
+  .lg-field input:focus{background:#fff;border-color:var(--blue-500);box-shadow:0 0 0 4px rgba(47,128,207,.16)}
+  .lg-field:focus-within .lg-lead-i{color:var(--blue-500)}
+  .lg-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:10px;border:0;background:transparent;color:#7f95ad;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .lg-eye:hover{background:#e7eff9;color:var(--blue-600)}
+  .lg-btn{position:relative;overflow:hidden;width:100%;height:56px;margin-top:8px;border:0;border-radius:14px;cursor:pointer;font:700 17px 'Source Sans 3',sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(180deg,#3a8ee0,#1f63a8);box-shadow:0 14px 30px -8px rgba(31,99,168,.7),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .2s,box-shadow .2s}
+  .lg-btn:hover{transform:translateY(-2px);box-shadow:0 20px 36px -10px rgba(31,99,168,.8),inset 0 1px 0 rgba(255,255,255,.3)}
+  .lg-btn:active{transform:translateY(0)}
+  .lg-btn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:lg-shine 4.5s ease-in-out infinite}
+  @keyframes lg-shine{0%,55%{left:-60%}100%{left:130%}}
+  .lg-btn .lg-i{width:19px;height:19px;stroke-width:2.4;transition:transform .2s}
+  .lg-btn:hover .lg-i{transform:translateX(4px)}
 
-.login-form h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  color: #12263a;
-}
+  /* rodapé */
+  .lg-foot{position:absolute;z-index:6;inset:auto 0 0 0;display:flex;justify-content:space-between;gap:20px;padding:0 56px 26px;font-size:13.5px;color:#7491b2}
+  .lg-foot b{color:#b9d3ee;font-weight:600}
 
-.subtitulo {
-  margin: 0 0 24px;
-  font-size: 15px;
-  color: #3f4f5f;
-}
-
-/* Barra de carregamento: o espaço fica reservado, mas ela só aparece ao carregar */
-.linha-carga {
-  position: relative;
-  height: 3px;
-  margin-bottom: 24px;
-  overflow: hidden;
-  background: transparent;
-}
-
-.linha-carga.ativa {
-  background: #a9c4dd;
-}
-
-.linha-carga.ativa::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 40%;
-  background: #1c6fb8;
-  animation: linha-carga-anim 1.1s ease-in-out infinite;
-}
-
-@keyframes linha-carga-anim {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(250%); }
-}
-
-/* Quem prefere menos movimento vê a barra parada */
-@media (prefers-reduced-motion: reduce) {
-  .linha-carga.ativa::after {
-    animation: none;
-    left: 60%;
+  /* ================= ADAPTAÇÃO ================= */
+  @media (max-height:800px){
+    .lg-left{padding-top:84px;padding-bottom:290px}
+    .lg-pulse{bottom:136px;height:160px}.lg-axis{bottom:74px}
+    .lg-card{padding:34px 38px 30px}.lg-card .lg-sub{margin-bottom:18px}.lg-badge{margin-bottom:14px}
+    .lg-field{margin-bottom:14px}.lg-field input{height:50px}.lg-btn{height:52px}
   }
-}
-
-.login-form label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #3f4f5f;
-  margin-bottom: 6px;
-}
-
-.login-form input {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  font-size: 15px;
-  font-family: inherit;
-  border: 1px solid #c9d1d9;
-  border-radius: 6px;
-  margin-bottom: 18px;
-}
-
-.login-form input:focus {
-  outline: none;
-  border-color: #1c6fb8;
-  box-shadow: 0 0 0 3px rgba(28, 111, 184, 0.15);
-}
-
-.btn-entrar {
-  height: 46px;
-  margin-top: 4px;
-  background: linear-gradient(135deg, #2f80c4, #1c5a9a);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: inherit;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(28, 111, 184, 0.3);
-}
-
-.btn-entrar:hover {
-  background: linear-gradient(135deg, #2573b3, #154a80);
-}
-
-.erro {
-  color: #dc2626;
-  font-size: 14px;
-  margin: -6px 0 12px;
-}
-
-/* ---------- Celular / tela pequena ---------- */
-@media (max-width: 900px) {
-  .login-hero {
-    display: none;
+  @media (max-height:660px){ .lg-pulse,.lg-axis{display:none}.lg-left{padding-bottom:84px} }
+  @media (max-width:980px){
+    .lg-page{grid-template-columns:1fr}.lg-left,.lg-pulse,.lg-axis{display:none}
+    .lg-right{padding:82px 18px 64px}
+    .lg-top{padding:20px}.lg-foot{padding:0 20px 14px;flex-direction:column;gap:2px;font-size:12px}
+    .lg-brand b{font-size:20px}.lg-mark{width:34px;height:34px}.lg-back{font-size:13px;padding:8px 12px}
+    .lg-card{padding:28px 24px 24px;border-radius:24px}.lg-card h2{font-size:30px}
   }
-}
-
-/* ---------- Campo de senha com olhinho ---------- */
-.campo-senha {
-  position: relative;
-}
-
-.login-form .campo-senha input {
-  padding-right: 46px;
-}
-
-.btn-olho {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: #5b6b7b;
-  background: none;
-  border: none;
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-}
-
-.btn-olho:hover {
-  color: #1c6fb8;
-}
-
-.btn-olho:focus-visible {
-  outline: 2px solid #1c6fb8;
-  outline-offset: -2px;
-}
-
-/* Esconde o olho nativo do Edge, para não aparecer dois */
-.login-form input::-ms-reveal,
-.login-form input::-ms-clear {
-  display: none;
-}
-
-.btn-entrar:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
+  @media (prefers-reduced-motion:reduce){ .lg-page *,.lg-page *::before,.lg-page *::after{animation:none!important;transition:none!important} .lg-dot{transform:translate(-50%,-50%) scale(1)} .lg-agora{opacity:1} }

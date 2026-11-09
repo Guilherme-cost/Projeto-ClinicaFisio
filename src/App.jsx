@@ -4,6 +4,8 @@ import Login from "./pages/Login";
 import PrivateRoute from "./components/PrivateRoute";
 import FilaDia from "./pages/FilaDia";
 import Avisos from "./pages/Avisos";
+import Estoque from "./pages/Estoque";
+import Chat from "./pages/Chat";
 import Layout from "./components/Layout";
 import Documentos from "./pages/Documentos";
 import Pagina from "./components/Pagina";
@@ -29,7 +31,8 @@ function App() {
               <Route path="/fila-dia" element={<FilaDia />} />
               <Route path="/fila-de-espera" element={<FilaEspera />} />
               <Route path="/pacientes" element={<Pacientes />} />
-              <Route path="/estoque" element={<Pagina titulo="Estoque" />} />
+              <Route path="/estoque" element={<Estoque />} />
+              <Route path="/chat" element={<Chat />} /> 
               <Route path="/avisos" element={<Avisos />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/documentos" element={<Documentos />} />

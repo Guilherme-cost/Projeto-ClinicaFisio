@@ -36,6 +36,7 @@ export const PESOS_TELAS = {
   filaEspera: pesoTela("VITE_PESO_FILA_ESPERA"),
   pacientes: pesoTela("VITE_PESO_PACIENTES"),
   estoque: pesoTela("VITE_PESO_ESTOQUE"),
+   chat: pesoTela("VITE_PESO_CHAT", 0),
   avisos: pesoTela("VITE_PESO_AVISOS"),
   documentos: pesoTela("VITE_PESO_DOCUMENTOS"),
   dashboard: pesoTela("VITE_PESO_DASHBOARD"),
@@ -51,4 +52,7 @@ export const PESOS_FILA = {
   encaixe: pesoTela("VITE_PESO_ENCAIXE"),
   gerenciarHorarios: pesoTela("VITE_PESO_GERENCIAR_HORARIOS"),
   autorizarExcecao: pesoTela("VITE_PESO_AUTORIZAR_EXCECAO"),
+  chat: pesoTela("VITE_PESO_CHAT"),
+  documentos: pesoTela("VITE_PESO_DOCUMENTOS"),
 };
+

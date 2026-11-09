@@ -33,6 +33,7 @@ export const TELAS = [
   { caminho: "/pacientes", nome: "Pacientes", peso: PESOS_TELAS.pacientes },
   { caminho: "/estoque", nome: "Estoque", peso: PESOS_TELAS.estoque },
   { caminho: "/avisos", nome: "Avisos", peso: PESOS_TELAS.avisos },
+  { caminho: "/chat", nome: "Chat", peso: PESOS_TELAS.chat },
   { caminho: "/dashboard", nome: "Dashboard", peso: PESOS_TELAS.dashboard },
   { caminho: "/documentos", nome: "Documentos", peso: PESOS_TELAS.documentos },
   { caminho: "/configuracoes", nome: "Configurações", peso: PESOS_TELAS.configuracoes },
